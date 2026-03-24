@@ -1,82 +1,98 @@
-PRD – Aivora Sistem Geliştirme Dokümanı
-1. Ürün Tanımı
-Aivora; kurumsal firmalar için yapay zeka destekli müşteri iletişimi, bilgi tabanı yönetimi ve görev otomasyonu sağlayan bir platformdur. Bu doküman, mevcut sistemin ölçeklenebilir, modüler ve enterprise seviyeye taşınması için gerekli fonksiyonel ve teknik gereksinimleri tanımlar.
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
 
-2. Ürün Vizyonu
-[ ] Yapay zekayı operasyonel yük azaltan bir "destek asistanı" olmaktan çıkarıp, süreç yöneten otonom bir sistem haline getirmek [ ] Kurumların bilgi tabanını dinamik olarak öğrenen ve güncelleyen bir yapı kurmak [ ] Çok kanallı (Web, WhatsApp, API) entegre müşteri iletişim altyapısı oluşturmak
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-3. Hedef Kullanıcı Segmentleri
-[ ] KOBİ'ler [ ] E-ticaret firmaları [ ] Teknik servis firmaları [ ] Eğitim kurumları [ ] Kurumsal satış ekipleri
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-4. Fonksiyonel Gereksinimler
-4.1 AI Chat & RAG Sistemi
-[ ] Gelişmiş RAG (Retrieval-Augmented Generation) altyapısı [ ] Vektör veritabanı entegrasyonu (örn: Qdrant / Weaviate) [ ] Soru cevap geçmişine göre dinamik öğrenme [ ] Belirsiz sorular için otomatik görev oluşturma [ ] İnsan onaylı cevap mekanizması (Human-in-the-loop) [ ] Cevap güven skoru hesaplama [ ] Yanıt versiyonlama ve geri alma sistemi
+## Description
 
-4.2 Görev Yönetim Sistemi
-[ ] AI tarafından oluşturulan görevlerin panelde listelenmesi [ ] Görev önceliklendirme algoritması [ ] SLA takibi [ ] Departman bazlı yönlendirme [ ] Görev performans analitiği
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-4.3 Bilgi Tabanı Yönetimi
-[ ] Otomatik doküman indexleme [ ] PDF, DOCX, XLSX veri içeriği çıkarımı [ ] Versiyon kontrol sistemi [ ] Bilgi çakışma tespiti [ ] Eski içerik arşivleme mekanizması
+## Project setup
 
-4.4 Çok Kanallı Entegrasyon
-[ ] Web widget chatbot [ ] WhatsApp Business API entegrasyonu [ ] REST API [ ] n8n webhook entegrasyonu [ ] CRM sistemleri ile entegrasyon
+```bash
+$ npm install
+```
 
-4.5 Yönetim Paneli
-[ ] Rol bazlı yetkilendirme (RBAC) [ ] Çoklu firma (multi-tenant) desteği [ ] AI cevap düzenleme ekranı [ ] Cevap analitik dashboard'u [ ] Prompt yönetim ekranı [ ] Model değiştirme desteği (OpenAI / Local LLM)
+## Compile and run the project
 
-5. İleri Seviye (Öngörülen) Özellikler
-5.1 Otonom Süreç Motoru
-[ ] AI'nın belirli kurallara göre otomatik aksiyon alması [ ] Ödeme gecikmesi algılayıp otomatik hatırlatma oluşturma [ ] Satış fırsatı tespiti
+```bash
+# development
+$ npm run start
 
-5.2 Akıllı Analitik
-[ ] Müşteri duygu analizi [ ] Konu kümelendirme [ ] En sık gelen problem haritası [ ] Churn tahmini
+# watch mode
+$ npm run start:dev
 
-5.3 AI Güvenlik Katmanı
-[ ] Prompt injection tespiti [ ] Veri sızıntısı önleme katmanı [ ] Hassas veri maskeleme [ ] Kullanıcı bazlı erişim filtreleme
+# production mode
+$ npm run start:prod
+```
 
-5.4 AI Eğitim Modülü
-[ ] İnsanların AI’ya örnek cevap öğretmesi [ ] Öğretilen cevapların otomatik test edilmesi [ ] Model performans karşılaştırması
+## Run tests
 
-5.5 Otomatik A/B Test Mekanizması
-[ ] İki farklı cevap varyantını test etme [ ] Dönüşüm oranı ölçümü
+```bash
+# unit tests
+$ npm run test
 
-6. Teknik Gereksinimler
-6.1 Backend
-[ ] Node.js (NestJS) veya FastAPI [ ] PostgreSQL [ ] Redis (cache + queue) [ ] Vektör DB (Qdrant) [ ] Docker containerization [ ] Kubernetes deploy altyapısı
+# e2e tests
+$ npm run test:e2e
 
-6.2 Frontend
-[ ] React + TypeScript [ ] ShadCN UI veya Tailwind UI [ ] WebSocket gerçek zamanlı veri
+# test coverage
+$ npm run test:cov
+```
 
-6.3 DevOps
-[ ] CI/CD (GitHub Actions) [ ] Logging (ELK stack) [ ] Monitoring (Prometheus + Grafana) [ ] Error tracking (Sentry)
+## Deployment
 
-7. Açık Kaynak Referans Repositories
-RAG & AI
-[ ] https://github.com/langchain-ai/langchain [ ] https://github.com/run-llama/llama_index [ ] https://github.com/qdrant/qdrant [ ] https://github.com/deepset-ai/haystack
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
-Multi-Tenant & Auth
-[ ] https://github.com/ory/kratos [ ] https://github.com/supabase/supabase
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
 
-Dashboard & Admin
-[ ] https://github.com/appsmithorg/appsmith [ ] https://github.com/refinedev/refine
+```bash
+$ npm install -g @nestjs/mau
+$ mau deploy
+```
 
-Workflow & Automation
-[ ] https://github.com/n8n-io/n8n [ ] https://github.com/temporalio/temporal
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
-Observability
-[ ] https://github.com/getsentry/sentry [ ] https://github.com/prometheus/prometheus [ ] https://github.com/grafana/grafana
+## Resources
 
-8. Ölçeklenebilirlik Stratejisi
-[ ] Microservice mimariye geçiş [ ] Tenant bazlı veri izolasyonu [ ] Model cache katmanı [ ] AI cevap maliyet optimizasyon algoritması
+Check out a few resources that may come in handy when working with NestJS:
 
-9. KPI'lar
-[ ] AI çözüm oranı (% kaç soruyu insan müdahalesi olmadan çözüyor) [ ] Ortalama cevap süresi [ ] SLA uyum oranı [ ] Müşteri memnuniyet skoru [ ] Görev kapanma süresi
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
+- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
+- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
+- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 
-10. Yol Haritası (Önerilen)
-Faz 1: [ ] Temel RAG altyapısı [ ] Görev oluşturma sistemi [ ] Admin panel
+## Support
 
-Faz 2: [ ] Çok kanallı entegrasyon [ ] Analitik dashboard [ ] AI güvenlik katmanı
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-Faz 3: [ ] Otonom süreç motoru [ ] A/B test [ ] Model karşılaştırma altyapısı
+## Stay in touch
 
-Bu doküman; teknik ekip, ürün ekibi ve yatırımcı sunumu için referans alınabilecek kapsamlı bir ürün gereksinim taslağıdır.
+- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
+
+## License
+
+Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
