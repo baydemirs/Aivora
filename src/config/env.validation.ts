@@ -9,4 +9,6 @@ export const envValidationSchema = Joi.object({
   DIRECT_URL: Joi.string().required(),
   JWT_SECRET: Joi.string().required(),
   JWT_EXPIRATION: Joi.string().default('7d'),
+  OPENAI_API_KEY: Joi.string().required(),
+  QDRANT_URL: Joi.string().default('http://localhost:6333'),
 });

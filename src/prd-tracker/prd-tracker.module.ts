@@ -4,6 +4,7 @@ import { PrdTrackerController } from './prd-tracker.controller';
 
 @Module({
   providers: [PrdTrackerService],
-  controllers: [PrdTrackerController]
+  controllers: [PrdTrackerController],
+  exports: [PrdTrackerService], // Required for RagModule to inject PrdTrackerService
 })
 export class PrdTrackerModule {}

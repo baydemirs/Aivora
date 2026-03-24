@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TaskStatus } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { CreatePrdTaskDto } from './dto/create-prd-task.dto';
 import { UpdatePrdTaskDto } from './dto/update-prd-task.dto';

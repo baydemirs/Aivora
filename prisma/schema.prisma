@@ -24,8 +24,10 @@ model Tenant {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users    User[]
-  prdTasks PrdTask[]
+  users         User[]
+  prdTasks      PrdTask[]
+  documents     Document[]
+  conversations Conversation[]
 
   @@map("tenants")
 }
@@ -67,3 +69,60 @@ model PrdTask {
   @@index([tenantId])
   @@map("prd_tasks")
 }
+
+// ─── Knowledge Base ───────────────────────────────────────
+
+model Document {
+  id        String   @id @default(uuid())
+  title     String
+  tenantId  String   @map("tenant_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  chunks DocumentChunk[]
+  tenant Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id          String   @id @default(uuid())
+  documentId  String   @map("document_id")
+  content     String
+  embeddingId String   @map("embedding_id") // Qdrant point ID reference
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("document_chunks")
+}
+
+// ─── Chat System ────────────────────────────────────────
+
+model Conversation {
+  id        String    @id @default(uuid())
+  title     String?
+  tenantId  String    @map("tenant_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  messages Message[]
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  content        String
+  role           String   // "user" or "assistant"
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
