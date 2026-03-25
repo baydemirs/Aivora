@@ -8,3 +8,23 @@ export { Avatar, AvatarImage, AvatarFallback } from './avatar'
 export { Sheet, SheetContent, SheetHeader, SheetTitle } from './sheet'
 export { ScrollArea } from './scroll-area'
 export { Skeleton } from './skeleton'
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from './table'
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+} from './select'
