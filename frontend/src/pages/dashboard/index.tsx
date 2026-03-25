@@ -85,7 +85,7 @@ export function DashboardPage() {
           <div>
             <CardTitle className="text-base">{user?.tenantName || 'Your Organization'}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {user?.role === 'ADMIN' ? 'Administrator' : 'Member'} • Tenant ID: {user?.tenantId?.slice(0, 8)}...
+              {user?.role === 'ADMIN' ? 'Administrator' : 'Member'} • Tenant ID: {user?.tenantId ? `${user.tenantId.slice(0, 8)}...` : 'N/A'}
             </p>
           </div>
         </CardHeader>
@@ -99,7 +99,7 @@ export function DashboardPage() {
           description="All PRD tasks"
           icon={ListTodo}
           loading={isTaskStatsLoading}
-          to="/prd-tracker"
+          to="/tasks"
         />
         <StatCard
           title="Active Tasks"
@@ -107,7 +107,7 @@ export function DashboardPage() {
           description="Todo, In Progress, Blocked, Review"
           icon={Clock}
           loading={isTaskStatsLoading}
-          to="/prd-tracker"
+          to="/tasks"
         />
         <StatCard
           title="Completed Tasks"
@@ -115,7 +115,7 @@ export function DashboardPage() {
           description="Successfully completed"
           icon={CheckCircle}
           loading={isTaskStatsLoading}
-          to="/prd-tracker"
+          to="/tasks"
         />
         <StatCard
           title="Blocked Tasks"
@@ -123,7 +123,7 @@ export function DashboardPage() {
           description="Need attention"
           icon={AlertCircle}
           loading={isTaskStatsLoading}
-          to="/prd-tracker"
+          to="/tasks"
         />
       </div>
 

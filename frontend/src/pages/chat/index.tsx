@@ -1,261 +1,169 @@
-import { useState, useRef, useEffect } from 'react'
-import { Card, Button, Textarea, Badge, ScrollArea } from '@/components/ui'
-import { Send, Plus, MessageSquare, Bot, User, Sparkles } from 'lucide-react'
-import type { Conversation, Message } from '@/types'
-import { cn } from '@/lib/utils'
-
-// Mock data - will be replaced with API calls
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    title: 'How to implement RAG?',
-    tenantId: '1',
-    createdAt: '2024-01-20T10:00:00Z',
-    _count: { messages: 8 },
-  },
-  {
-    id: '2',
-    title: 'Authentication best practices',
-    tenantId: '1',
-    createdAt: '2024-01-19T14:30:00Z',
-    _count: { messages: 12 },
-  },
-  {
-    id: '3',
-    title: 'Database schema design',
-    tenantId: '1',
-    createdAt: '2024-01-18T09:00:00Z',
-    _count: { messages: 6 },
-  },
-]
-
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    conversationId: '1',
-    content: 'How do I implement RAG in my application?',
-    role: 'user',
-    createdAt: '2024-01-20T10:00:00Z',
-  },
-  {
-    id: '2',
-    conversationId: '1',
-    content: 'RAG (Retrieval-Augmented Generation) is a technique that combines retrieval of relevant documents with language model generation. Here\'s how to implement it:\n\n1. **Document Processing**: First, split your documents into chunks and create embeddings using OpenAI\'s embedding API.\n\n2. **Vector Storage**: Store these embeddings in a vector database like Qdrant for efficient similarity search.\n\n3. **Query Processing**: When a user asks a question, convert it to an embedding and search for similar document chunks.\n\n4. **Context Injection**: Pass the retrieved chunks as context to the LLM along with the user\'s question.\n\n5. **Response Generation**: The LLM generates a response based on the provided context.\n\nWould you like more details on any specific step?',
-    role: 'assistant',
-    createdAt: '2024-01-20T10:00:30Z',
-  },
-  {
-    id: '3',
-    conversationId: '1',
-    content: 'Yes, can you explain the embedding process in more detail?',
-    role: 'user',
-    createdAt: '2024-01-20T10:01:00Z',
-  },
-  {
-    id: '4',
-    conversationId: '1',
-    content: 'The embedding process converts text into numerical vectors that capture semantic meaning. Here\'s a detailed breakdown:\n\n**Step 1: Text Chunking**\n- Split documents into smaller chunks (typically 500-1000 tokens)\n- Maintain some overlap between chunks for context continuity\n\n**Step 2: Embedding Generation**\n```typescript\nconst embedding = await openai.embeddings.create({\n  model: "text-embedding-3-small",\n  input: chunkText,\n});\n```\n\n**Step 3: Vector Storage**\n- Store embeddings with metadata (document ID, chunk position)\n- Index vectors for fast similarity search\n\nThe resulting vectors allow semantic search - finding relevant content based on meaning rather than exact keyword matches.',
-    role: 'assistant',
-    createdAt: '2024-01-20T10:01:30Z',
-  },
-]
+import { useState, useCallback } from 'react'
+import { Card, Button, Sheet, SheetContent } from '@/components/ui'
+import { Menu } from 'lucide-react'
+import {
+  useConversations,
+  useMessages,
+  useSendMessage,
+  useCreateConversation,
+  useDeleteConversation,
+} from '@/features/chat/hooks/useChat'
+import {
+  ConversationList,
+  ChatHeader,
+  MessageList,
+  MessageComposer,
+  EmptyChatState,
+} from '@/features/chat/components'
 
 export function ChatPage() {
-  const [conversations] = useState<Conversation[]>(mockConversations)
-  const [selectedConversation, setSelectedConversation] = useState<string | null>('1')
-  const [messages, setMessages] = useState<Message[]>(mockMessages)
-  const [inputMessage, setInputMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [activeConversationId, setActiveConversationId] = useState<string | null>('conv-1')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [mobileListOpen, setMobileListOpen] = useState(false)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  // Queries
+  const { data: conversationsData, isLoading: isLoadingConversations } = useConversations({
+    search: searchQuery || undefined,
+  })
+  const { data: messages, isLoading: isLoadingMessages } = useMessages(activeConversationId)
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+  // Mutations
+  const sendMessageMutation = useSendMessage()
+  const createConversationMutation = useCreateConversation()
+  const deleteConversationMutation = useDeleteConversation()
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return
+  const conversations = conversationsData?.conversations || []
+  const activeConversation = conversations.find((c) => c.id === activeConversationId) || null
 
-    const userMessage: Message = {
-      id: String(Date.now()),
-      conversationId: selectedConversation || 'new',
-      content: inputMessage,
-      role: 'user',
-      createdAt: new Date().toISOString(),
+  // Handlers
+  const handleSelectConversation = useCallback(
+    (id: string) => {
+      setActiveConversationId(id)
+      setMobileListOpen(false)
+    },
+    [],
+  )
+
+  const handleNewConversation = useCallback(async () => {
+    try {
+      const newConv = await createConversationMutation.mutateAsync(undefined)
+      setActiveConversationId(newConv.id)
+      setMobileListOpen(false)
+    } catch (error) {
+      console.error('Failed to create conversation:', error)
     }
+  }, [createConversationMutation])
 
-    setMessages(prev => [...prev, userMessage])
-    setInputMessage('')
-    setIsLoading(true)
+  const handleSendMessage = useCallback(
+    (content: string) => {
+      if (!activeConversationId || !content.trim()) return
+      sendMessageMutation.mutate({
+        conversationId: activeConversationId,
+        content,
+      })
+    },
+    [activeConversationId, sendMessageMutation],
+  )
 
-    // Simulate AI response
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    const aiMessage: Message = {
-      id: String(Date.now() + 1),
-      conversationId: selectedConversation || 'new',
-      content: 'This is a simulated AI response. In production, this would be generated by the RAG pipeline using your knowledge base documents to provide accurate, context-aware answers.',
-      role: 'assistant',
-      createdAt: new Date().toISOString(),
+  const handleDeleteConversation = useCallback(async () => {
+    if (!activeConversationId) return
+    const confirmed = window.confirm('Are you sure you want to delete this conversation?')
+    if (!confirmed) return
+    try {
+      await deleteConversationMutation.mutateAsync(activeConversationId)
+      // Select another conversation or clear
+      const remaining = conversations.filter((c) => c.id !== activeConversationId)
+      setActiveConversationId(remaining.length > 0 ? remaining[0].id : null)
+    } catch (error) {
+      console.error('Failed to delete conversation:', error)
     }
+  }, [activeConversationId, conversations, deleteConversationMutation])
 
-    setMessages(prev => [...prev, aiMessage])
-    setIsLoading(false)
-  }
-
-  const handleNewConversation = () => {
-    setSelectedConversation(null)
-    setMessages([])
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
+  // Shared sidebar content
+  const sidebarContent = (
+    <ConversationList
+      conversations={conversations}
+      activeId={activeConversationId}
+      onSelect={handleSelectConversation}
+      onNewConversation={handleNewConversation}
+      isLoading={isLoadingConversations}
+      isCreating={createConversationMutation.isPending}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+    />
+  )
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
-      {/* Conversation List - Left Column */}
-      <Card className="hidden w-80 flex-shrink-0 md:flex md:flex-col">
-        <div className="flex items-center justify-between border-b p-4">
-          <h3 className="font-semibold">Conversations</h3>
-          <Button size="sm" onClick={handleNewConversation}>
-            <Plus className="mr-1 h-4 w-4" />
-            New
-          </Button>
-        </div>
-        <ScrollArea className="flex-1 p-2">
-          <div className="space-y-2">
-            {conversations.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => setSelectedConversation(conv.id)}
-                className={cn(
-                  'w-full rounded-lg p-3 text-left transition-colors',
-                  selectedConversation === conv.id
-                    ? 'bg-primary/10'
-                    : 'hover:bg-muted'
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <MessageSquare className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{conv.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {conv._count?.messages || 0} messages
-                    </p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </ScrollArea>
+      {/* Desktop Sidebar */}
+      <Card className="hidden w-80 shrink-0 md:flex md:flex-col overflow-hidden">
+        {sidebarContent}
       </Card>
 
-      {/* Chat Area - Right Column */}
-      <Card className="flex flex-1 flex-col">
-        {/* Chat Header */}
-        <div className="flex items-center justify-between border-b p-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span className="font-semibold">AI Assistant</span>
-          </div>
-          {selectedConversation && (
-            <Badge variant="secondary">
-              {messages.length} messages
-            </Badge>
-          )}
-        </div>
+      {/* Mobile Sheet */}
+      <Sheet open={mobileListOpen} onOpenChange={setMobileListOpen}>
+        <SheetContent side="left" className="w-80 p-0">
+          {sidebarContent}
+        </SheetContent>
+      </Sheet>
 
-        {/* Messages */}
-        <ScrollArea className="flex-1 p-4">
-          {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <Bot className="h-16 w-16 text-muted-foreground/50" />
-              <h3 className="mt-4 text-lg font-semibold">Start a conversation</h3>
-              <p className="mt-2 max-w-sm text-muted-foreground">
-                Ask questions about your documents and get AI-powered answers based on your knowledge base.
-              </p>
+      {/* Chat Area */}
+      <Card className="flex flex-1 flex-col overflow-hidden">
+        {activeConversationId ? (
+          <>
+            {/* Header with mobile menu trigger */}
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-2 h-8 w-8 p-0 md:hidden"
+                onClick={() => setMobileListOpen(true)}
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+              <div className="flex-1">
+                <ChatHeader
+                  conversation={activeConversation}
+                  messageCount={messages?.length || 0}
+                  onDelete={handleDeleteConversation}
+                  isDeleting={deleteConversationMutation.isPending}
+                />
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={cn(
-                    'flex gap-3',
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  )}
-                >
-                  {message.role === 'assistant' && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <Bot className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      'max-w-[80%] rounded-lg px-4 py-3',
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    )}
-                  >
-                    <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-                  </div>
-                  {message.role === 'user' && (
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary">
-                      <User className="h-4 w-4 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="rounded-lg bg-muted px-4 py-3">
-                    <div className="flex gap-1">
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50" style={{ animationDelay: '0ms' }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50" style={{ animationDelay: '150ms' }} />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </ScrollArea>
 
-        {/* Input Area */}
-        <div className="border-t p-4">
-          <div className="flex gap-2">
-            <Textarea
-              placeholder="Type your message..."
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-[60px] resize-none"
-              disabled={isLoading}
+            {/* Messages */}
+            <MessageList
+              messages={messages || []}
+              isLoading={isLoadingMessages}
+              isAiResponding={sendMessageMutation.isPending}
             />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
-              className="h-auto"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Press Enter to send, Shift+Enter for new line
-          </p>
-        </div>
+
+            {/* Composer */}
+            <MessageComposer
+              onSend={handleSendMessage}
+              isSending={sendMessageMutation.isPending}
+            />
+          </>
+        ) : (
+          <>
+            {/* Mobile menu trigger in empty state */}
+            <div className="flex items-center md:hidden border-b px-4 py-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setMobileListOpen(true)}
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+              <span className="ml-2 text-sm font-medium">Conversations</span>
+            </div>
+            <EmptyChatState
+              variant="no-conversation"
+              onNewConversation={handleNewConversation}
+            />
+          </>
+        )}
       </Card>
     </div>
   )

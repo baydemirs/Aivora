@@ -15,6 +15,14 @@ import type { KBDocument } from '../types'
 import { DocumentStatusBadge } from './DocumentStatusBadge'
 import { formatDistanceToNow } from 'date-fns'
 
+function safeFormatDate(dateString: string): string {
+  try {
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true })
+  } catch {
+    return 'Unknown'
+  }
+}
+
 interface DocumentListProps {
   documents: KBDocument[]
   loading?: boolean
@@ -117,7 +125,7 @@ export function DocumentList({
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground whitespace-nowrap">
                   <div className="flex flex-col">
-                    <span>{formatDistanceToNow(new Date(doc.uploadedAt), { addSuffix: true })}</span>
+                    <span>{safeFormatDate(doc.uploadedAt)}</span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">

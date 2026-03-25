@@ -75,15 +75,19 @@ export function KnowledgeBasePage() {
 
   const handleConfirmDelete = async () => {
     if (!docToDelete) return
-    
-    await deleteMutation.mutateAsync(docToDelete.id)
-    setIsDeleteDialogOpen(false)
-    setDocToDelete(null)
-    
-    // If the detail drawer was open for this document, close it
-    if (selectedDoc?.id === docToDelete.id) {
-      setIsDetailOpen(false)
-      setSelectedDoc(null)
+
+    try {
+      await deleteMutation.mutateAsync(docToDelete.id)
+      setIsDeleteDialogOpen(false)
+      setDocToDelete(null)
+
+      // If the detail drawer was open for this document, close it
+      if (selectedDoc?.id === docToDelete.id) {
+        setIsDetailOpen(false)
+        setSelectedDoc(null)
+      }
+    } catch (error) {
+      console.error('Failed to delete document:', error)
     }
   }
 
