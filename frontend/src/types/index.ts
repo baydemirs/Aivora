@@ -2,8 +2,10 @@
 export interface User {
   id: string
   email: string
+  fullName: string
   role: 'ADMIN' | 'USER'
   tenantId: string
+  tenantName: string
   createdAt: string
   updatedAt: string
 }
@@ -14,6 +16,7 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
+  fullName: string
   email: string
   password: string
   tenantName: string
@@ -22,6 +25,19 @@ export interface RegisterRequest {
 export interface AuthResponse {
   accessToken: string
   user: User
+}
+
+// Form validation
+export interface ValidationError {
+  field: string
+  message: string
+}
+
+export interface FormState<T> {
+  values: T
+  errors: Partial<Record<keyof T, string>>
+  isSubmitting: boolean
+  isValid: boolean
 }
 
 // Tenant Types
