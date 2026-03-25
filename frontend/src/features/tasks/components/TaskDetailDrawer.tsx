@@ -52,9 +52,13 @@ export function TaskDetailDrawer({
   const [copied, setCopied] = useState<string | null>(null)
 
   const handleCopy = async (text: string, type: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopied(type)
-    setTimeout(() => setCopied(null), 2000)
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(type)
+      setTimeout(() => setCopied(null), 2000)
+    } catch {
+      // Clipboard API may be unavailable in insecure contexts
+    }
   }
 
   const formatDate = (dateString: string) => {

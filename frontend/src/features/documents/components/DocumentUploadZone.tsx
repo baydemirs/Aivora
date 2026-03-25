@@ -11,6 +11,7 @@ interface DocumentUploadZoneProps {
 export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [rejectedCount, setRejectedCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -26,15 +27,24 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
+    setRejectedCount(0)
     if (isUploading) return
 
-    const files = Array.from(e.dataTransfer.files).filter(file => {
+    const allFiles = Array.from(e.dataTransfer.files)
+    const validFiles = allFiles.filter(file => {
+      if (file.size === 0) return false
       const ext = `.${file.name.split('.').pop()?.toLowerCase()}`
       return ACCEPTED_FILE_EXTENSIONS.includes(ext)
     })
 
-    if (files.length > 0) {
-      setSelectedFiles(prev => [...prev, ...files])
+    const rejected = allFiles.length - validFiles.length
+    if (rejected > 0) {
+      setRejectedCount(rejected)
+      setTimeout(() => setRejectedCount(0), 4000)
+    }
+
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles])
     }
   }
 
@@ -98,6 +108,11 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                 <p className="text-sm text-muted-foreground mt-1">
                   Supported formats: {ACCEPTED_FILE_TYPES_DISPLAY}
                 </p>
+                {rejectedCount > 0 && (
+                  <p className="text-sm text-destructive mt-2">
+                    {rejectedCount} unsupported file{rejectedCount > 1 ? 's' : ''} rejected
+                  </p>
+                )}
               </div>
             </div>
           ) : isUploading ? (
