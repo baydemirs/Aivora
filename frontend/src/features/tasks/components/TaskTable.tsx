@@ -11,21 +11,17 @@ import {
   Skeleton,
 } from '@/components/ui'
 import {
-  Task,
   TaskStatus,
   TASK_MODULE_CONFIG
 } from '../types'
+import type { Task } from '../types'
 import { TaskStatusBadge } from './TaskStatusBadge'
 import { TaskPriorityBadge } from './TaskPriorityBadge'
 import { TaskStatusSelect } from './TaskStatusSelect'
 import {
-  MoreHorizontal,
   Eye,
   Edit,
   Trash2,
-  ExternalLink,
-  Calendar,
-  User,
   Clock
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'

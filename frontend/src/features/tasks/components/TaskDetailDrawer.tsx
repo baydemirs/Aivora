@@ -9,22 +9,20 @@ import {
   Skeleton,
 } from '@/components/ui'
 import {
-  Task,
   TaskStatus,
   TASK_MODULE_CONFIG
 } from '../types'
+import type { Task } from '../types'
 import { TaskStatusBadge } from './TaskStatusBadge'
 import { TaskPriorityBadge } from './TaskPriorityBadge'
 import { TaskStatusSelect } from './TaskStatusSelect'
 import {
-  X,
   Calendar,
   User,
   Clock,
   Tag,
   Edit,
   Trash2,
-  ExternalLink,
   Copy,
   CheckCircle2
 } from 'lucide-react'

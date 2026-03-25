@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { taskService } from '../services/tasks.service'
 import type {
   Task,
@@ -6,9 +6,8 @@ import type {
   GetTasksResponse,
   CreateTaskRequest,
   UpdateTaskRequest,
-  TaskStats,
-  TaskStatus
 } from '../types'
+import { TaskStatus } from '../types'
 
 // Query keys
 const taskKeys = {
@@ -139,7 +138,7 @@ export const useUpdateTask = () => {
       // Invalidate and refetch stats to update counts
       queryClient.invalidateQueries({ queryKey: taskKeys.stats() })
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       // Always refetch task details after mutation settles
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) })
     }
@@ -173,7 +172,7 @@ export const useDeleteTask = () => {
 
       return { previousTaskLists }
     },
-    onError: (error, id, context) => {
+    onError: (error, _id, context) => {
       // Rollback on error
       if (context?.previousTaskLists) {
         context.previousTaskLists.forEach(([queryKey, data]) => {
@@ -215,7 +214,7 @@ export const useBulkUpdateStatus = () => {
 
 // Utility hooks
 export const useTasksInfinite = (baseQuery: GetTasksQuery = {}) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [...taskKeys.lists(), 'infinite', baseQuery],
     queryFn: async ({ pageParam = 1 }) => {
       const query = { ...baseQuery, page: pageParam as number }
