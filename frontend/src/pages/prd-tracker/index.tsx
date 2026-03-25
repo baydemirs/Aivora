@@ -1,260 +1,382 @@
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Input } from '@/components/ui'
-import { Plus, CheckCircle, Clock, Loader2 } from 'lucide-react'
-import type { PrdTask, TaskStatus } from '@/types'
+import { useState, useMemo } from 'react'
+import { Card, CardContent, CardHeader, CardTitle, Button, Skeleton } from '@/components/ui'
+import { Plus, RotateCcw, Download, Filter } from 'lucide-react'
 
-// Mock data - will be replaced with API calls
-const mockTasks: PrdTask[] = [
-  {
-    id: '1',
-    title: 'Implement user authentication',
-    module: 'auth',
-    status: 'COMPLETED',
-    tenantId: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-16T14:30:00Z',
-  },
-  {
-    id: '2',
-    title: 'Setup RAG pipeline',
-    module: 'rag',
-    status: 'COMPLETED',
-    tenantId: '1',
-    createdAt: '2024-01-17T09:00:00Z',
-    updatedAt: '2024-01-18T11:00:00Z',
-  },
-  {
-    id: '3',
-    title: 'Integrate OpenAI API',
-    module: 'chat',
-    status: 'IN_PROGRESS',
-    tenantId: '1',
-    createdAt: '2024-01-19T08:00:00Z',
-    updatedAt: '2024-01-19T08:00:00Z',
-  },
-  {
-    id: '4',
-    title: 'Create document upload feature',
-    module: 'knowledge-base',
-    status: 'PENDING',
-    tenantId: '1',
-    createdAt: '2024-01-20T10:00:00Z',
-    updatedAt: '2024-01-20T10:00:00Z',
-  },
-  {
-    id: '5',
-    title: 'Add conversation history',
-    module: 'chat',
-    status: 'PENDING',
-    tenantId: '1',
-    createdAt: '2024-01-21T09:00:00Z',
-    updatedAt: '2024-01-21T09:00:00Z',
-  },
-]
-
-const statusConfig: Record<TaskStatus, { label: string; variant: 'default' | 'secondary' | 'success' | 'warning'; icon: React.ElementType }> = {
-  PENDING: { label: 'Pending', variant: 'secondary', icon: Clock },
-  IN_PROGRESS: { label: 'In Progress', variant: 'warning', icon: Loader2 },
-  COMPLETED: { label: 'Completed', variant: 'success', icon: CheckCircle },
-}
-
-const moduleColors: Record<string, string> = {
-  auth: 'bg-blue-100 text-blue-800',
-  rag: 'bg-purple-100 text-purple-800',
-  chat: 'bg-green-100 text-green-800',
-  'knowledge-base': 'bg-orange-100 text-orange-800',
-}
+// Task components and hooks
+import {
+  TaskTable,
+  TaskFilters,
+  TaskDetailDrawer
+} from '@/features/tasks/components'
+import {
+  useTasks,
+  useTaskStats,
+  useUpdateTask
+} from '@/features/tasks/hooks/useTasks'
+import type {
+  Task,
+  TaskFilters as TaskFiltersType,
+  TaskStatus,
+  TaskSortBy
+} from '@/features/tasks/types'
 
 export function PrdTrackerPage() {
-  const [tasks, setTasks] = useState<PrdTask[]>(mockTasks)
-  const [filter, setFilter] = useState<TaskStatus | 'ALL'>('ALL')
-  const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [newTaskModule, setNewTaskModule] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
+  // State
+  const [filters, setFilters] = useState<TaskFiltersType>({
+    searchQuery: '',
+    status: 'all',
+    priority: 'all',
+    module: 'all',
+    assignee: 'all',
+    sortBy: TaskSortBy.UPDATED_AT,
+    sortOrder: 'desc'
+  })
 
-  const filteredTasks = filter === 'ALL'
-    ? tasks
-    : tasks.filter(t => t.status === filter)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false)
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 
-  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId
-          ? { ...task, status: newStatus, updatedAt: new Date().toISOString() }
-          : task
-      )
+  // Prepare query parameters for API
+  const queryParams = useMemo(() => {
+    const params: any = {
+      search: filters.searchQuery || undefined,
+      status: filters.status !== 'all' ? filters.status : undefined,
+      priority: filters.priority !== 'all' ? filters.priority : undefined,
+      module: filters.module !== 'all' ? filters.module : undefined,
+      assignee: filters.assignee !== 'all' ? filters.assignee : undefined,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
+      limit: 50
+    }
+
+    // Remove undefined values
+    return Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => value !== undefined)
+    )
+  }, [filters])
+
+  // API calls
+  const {
+    data: tasksResponse,
+    isLoading: isTasksLoading,
+    error: tasksError,
+    refetch: refetchTasks
+  } = useTasks(queryParams)
+
+  const {
+    data: taskStats,
+    isLoading: isStatsLoading,
+    refetch: refetchStats
+  } = useTaskStats()
+
+  const updateTaskMutation = useUpdateTask()
+
+  // Handlers
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task)
+    setIsDetailDrawerOpen(true)
+  }
+
+  const handleCloseDrawer = () => {
+    setIsDetailDrawerOpen(false)
+    setSelectedTask(null)
+  }
+
+  const handleStatusChange = async (taskId: string, status: TaskStatus) => {
+    try {
+      await updateTaskMutation.mutateAsync({ id: taskId, data: { status } })
+    } catch (error) {
+      console.error('Failed to update task status:', error)
+      // TODO: Show toast notification
+    }
+  }
+
+  const handleTaskSelect = (taskId: string, selected: boolean) => {
+    setSelectedTaskIds(prev =>
+      selected
+        ? [...prev, taskId]
+        : prev.filter(id => id !== taskId)
     )
   }
 
-  const handleAddTask = () => {
-    if (!newTaskTitle.trim() || !newTaskModule.trim()) return
-
-    const newTask: PrdTask = {
-      id: String(Date.now()),
-      title: newTaskTitle,
-      module: newTaskModule.toLowerCase(),
-      status: 'PENDING',
-      tenantId: '1',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    setTasks(prev => [newTask, ...prev])
-    setNewTaskTitle('')
-    setNewTaskModule('')
-    setShowAddForm(false)
+  const handleRefresh = () => {
+    refetchTasks()
+    refetchStats()
   }
 
-  const stats = {
-    total: tasks.length,
-    pending: tasks.filter(t => t.status === 'PENDING').length,
-    inProgress: tasks.filter(t => t.status === 'IN_PROGRESS').length,
-    completed: tasks.filter(t => t.status === 'COMPLETED').length,
+  const handleFiltersReset = () => {
+    setFilters({
+      searchQuery: '',
+      status: 'all',
+      priority: 'all',
+      module: 'all',
+      assignee: 'all',
+      sortBy: TaskSortBy.UPDATED_AT,
+      sortOrder: 'desc'
+    })
   }
+
+  // Prepare data
+  const tasks = tasksResponse?.tasks || []
+  const stats = taskStats || {
+    total: 0,
+    todo: 0,
+    inProgress: 0,
+    blocked: 0,
+    review: 0,
+    done: 0,
+    byPriority: { low: 0, medium: 0, high: 0, urgent: 0 },
+    byModule: {}
+  }
+
+  const isLoading = isTasksLoading || isStatsLoading
+  const hasError = tasksError
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilter('ALL')}>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Total Tasks</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilter('PENDING')}>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-gray-600">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground">Pending</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilter('IN_PROGRESS')}>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">{stats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">In Progress</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilter('COMPLETED')}>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
-            <p className="text-xs text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          {(['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'] as const).map((status) => (
-            <Button
-              key={status}
-              variant={filter === status ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter(status)}
-            >
-              {status === 'ALL' ? 'All' : statusConfig[status].label}
-            </Button>
-          ))}
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">PRD Tracker</h1>
+          <p className="text-muted-foreground">
+            Manage and track product requirements and development tasks
+          </p>
         </div>
-        <Button onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Task
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Task
+          </Button>
+        </div>
       </div>
 
-      {/* Add Task Form */}
-      {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Add New Task</CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-4">
-            <Input
-              placeholder="Task title..."
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              className="flex-1"
-            />
-            <Input
-              placeholder="Module (e.g., auth, chat)"
-              value={newTaskModule}
-              onChange={(e) => setNewTaskModule(e.target.value)}
-              className="w-48"
-            />
-            <Button onClick={handleAddTask}>Add</Button>
-            <Button variant="outline" onClick={() => setShowAddForm(false)}>
-              Cancel
-            </Button>
+      {/* Stats Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}>
+          <CardContent className="pt-6">
+            {isStatsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-12" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <p className="text-xs text-muted-foreground">Total Tasks</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'todo' }))}>
+          <CardContent className="pt-6">
+            {isStatsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-12" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-gray-600">{stats.todo}</div>
+                <p className="text-xs text-muted-foreground">To Do</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'in_progress' }))}>
+          <CardContent className="pt-6">
+            {isStatsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-12" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
+                <p className="text-xs text-muted-foreground">In Progress</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'review' }))}>
+          <CardContent className="pt-6">
+            {isStatsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-12" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-yellow-600">{stats.review}</div>
+                <p className="text-xs text-muted-foreground">Review</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'done' }))}>
+          <CardContent className="pt-6">
+            {isStatsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-12" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold text-green-600">{stats.done}</div>
+                <p className="text-xs text-muted-foreground">Done</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TaskFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            showAdvanced={true}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Bulk Actions */}
+      {selectedTaskIds.length > 0 && (
+        <Card className="bg-muted/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {selectedTaskIds.length} task{selectedTaskIds.length > 1 ? 's' : ''} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTaskIds([])}
+                >
+                  Clear
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Task List */}
+      {/* Tasks Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Tasks</CardTitle>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">
+              Tasks
+              {tasksResponse?.totalCount && (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  ({tasksResponse.totalCount} total)
+                </span>
+              )}
+            </CardTitle>
+
+            {/* Table Actions */}
+            <div className="flex items-center gap-2">
+              {filters.searchQuery || filters.status !== 'all' || filters.priority !== 'all' ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleFiltersReset}
+                  className="text-muted-foreground"
+                >
+                  Reset filters
+                </Button>
+              ) : null}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredTasks.length === 0 ? (
-              <p className="py-8 text-center text-muted-foreground">
-                No tasks found
-              </p>
-            ) : (
-              filteredTasks.map((task) => {
-                const status = statusConfig[task.status]
-                const StatusIcon = status.icon
-
-                return (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      <StatusIcon
-                        className={`h-5 w-5 ${
-                          task.status === 'COMPLETED'
-                            ? 'text-green-500'
-                            : task.status === 'IN_PROGRESS'
-                            ? 'animate-spin text-yellow-500'
-                            : 'text-gray-400'
-                        }`}
-                      />
-                      <div>
-                        <p className="font-medium">{task.title}</p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                              moduleColors[task.module] || 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {task.module}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Updated {new Date(task.updatedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={status.variant}>{status.label}</Badge>
-                      <select
-                        value={task.status}
-                        onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
-                        className="rounded-md border px-2 py-1 text-sm"
-                      >
-                        <option value="PENDING">Pending</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="COMPLETED">Completed</option>
-                      </select>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
+          {hasError ? (
+            <div className="text-center py-12">
+              <div className="text-destructive mb-2">Failed to load tasks</div>
+              <Button variant="outline" onClick={handleRefresh}>
+                Try again
+              </Button>
+            </div>
+          ) : (
+            <TaskTable
+              tasks={tasks}
+              loading={isTasksLoading}
+              onTaskClick={handleTaskClick}
+              onStatusChange={handleStatusChange}
+              isStatusUpdating={(taskId) => updateTaskMutation.isPending}
+              selectedTaskIds={selectedTaskIds}
+              onTaskSelect={handleTaskSelect}
+              showActions={true}
+            />
+          )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {tasksResponse && tasksResponse.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {tasksResponse.currentPage} of {tasksResponse.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!tasksResponse.hasPrev}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!tasksResponse.hasNext}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Task Detail Drawer */}
+      <TaskDetailDrawer
+        task={selectedTask}
+        open={isDetailDrawerOpen}
+        onClose={handleCloseDrawer}
+        onStatusChange={selectedTask ? (status) => handleStatusChange(selectedTask.id, status) : undefined}
+        isStatusUpdating={updateTaskMutation.isPending}
+        loading={false}
+      />
     </div>
   )
 }
