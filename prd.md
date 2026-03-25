@@ -8,7 +8,7 @@ Hedef Kullanıcı Segmentleri [ ] KOBİ'ler [ ] E-ticaret firmaları [ ] Teknik 
 
 Fonksiyonel Gereksinimler 4.1 AI Chat & RAG Sistemi [x] Gelişmiş RAG (Retrieval-Augmented Generation) olarak sunulur [x] Vektör veri tabanı verileri (örn: Qdrant / Weaviate) [ ] Soru cevap geçmişine göre dinamik öğrenme [x] Belirsiz sorular için görev oluşturma [ ] İnsan verilerinin cevap oranı (Human-in-the-loop) [x] Cevap güven skoru tablosu [ ] Yanıt süresi ve geri alma sistemi
 
-4.2 Görev Yönetim Sistemi [x] AI tarafından sunulan hizmetlerin panelde listelenmesi [ ] Görev parlaklıklandırma programları [ ] SLA takibi [ ] Departman merkezli yönlendirme [ ] Görev performansı analitiği
+4.2 Görev Yönetim Sistemi [x] AI tarafından sunulan hizmetlerin panelde listelenmesi [ ] Görev parlaklıklandırma programları [ ] SLA takibi [ ] Departman merkezli yönlendirme [x] Görev performansı analitiği
 
 4.3 Bilgi Tabanı Yönetimi [x] Otomatik doküman indeksleme [x] PDF, DOCX, XLSX veri içeriği çıkarımı [ ] Versiyon kontrolü [ ] Bilgi çakışmalarının meydana gelmesi [ ] Eski içerik arşivleme oranları
 
@@ -26,7 +26,7 @@ Fonksiyonel Gereksinimler 4.1 AI Chat & RAG Sistemi [x] Gelişmiş RAG (Retrieva
 5.5 Otomatik A/B Test Mekanizması [ ] İki farklı cevap özelliklerini test etme [ ] Dönüşüm oranı görünümü
 
 Teknik Gereksinimler 6.1 Backend [x] Node.js (NestJS) veya FastAPI [x] PostgreSQL [ ] Redis (önbellek + kuyruk) [x] Vektör DB (Qdrant) [ ] Docker konteynerizasyonu [ ] Kubernetes dağıtımları
-6.2 Ön Uç [ ] React + TypeScript [ ] ShadCN UI veya Tailwind UI [ ] WebSocket gerçek zamanlı veri
+6.2 Ön Uç [x] React + TypeScript [x] ShadCN UI veya Tailwind UI [ ] WebSocket gerçek zamanlı veri
 
 6.3 DevOps [ ] CI/CD (GitHub Actions) [ ] Günlük Kaydı (ELK yığını) [ ] İzleme (Prometheus + Grafana) [ ] Hata Takibi (Sentry)
 
@@ -43,7 +43,7 @@ Gözlemlenebilirlik [ ] https://github.com/getsentry/sentry [ ] https://github.c
 
 KPI'lar [ ] AI çözüm oranı (% kaç soruyu insan müdahalesi olmadan çözüyor) [ ] sıcaklık cevap süresi [ ] SLA uyum oranı [ ] Müşteri özellikleri skoru [ ] İşlem kapanma süresi
 
-Yol Haritası (Önerilen) Faz 1: [x] Temel RAG'de [x] Görev oluşturma sistemi [ ] Yönetici paneli
+Yol Haritası (Önerilen) Faz 1: [x] Temel RAG'de [x] Görev oluşturma sistemi [x] Yönetici paneli
 
 Faz 2: [ ] Çok kanallı entegrasyon [ ] Analitik kontrol paneli [ ] AI güvenlik güvenliği
 
