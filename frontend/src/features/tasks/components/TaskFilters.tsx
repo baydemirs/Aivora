@@ -12,16 +12,15 @@ import {
   TaskStatus,
   TaskPriority,
   TaskSortBy,
-  TaskFilters as TaskFiltersType,
   TASK_STATUS_CONFIG,
   TASK_PRIORITY_CONFIG,
   TASK_MODULE_CONFIG
 } from '../types'
+import type { TaskFilters as TaskFiltersType } from '../types'
 import {
   Search,
   Filter,
   X,
-  ArrowUpDown,
   ArrowUp,
   ArrowDown
 } from 'lucide-react'

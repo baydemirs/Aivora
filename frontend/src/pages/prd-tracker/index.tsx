@@ -16,9 +16,8 @@ import {
 import type {
   Task,
   TaskFilters as TaskFiltersType,
-  TaskStatus,
-  TaskSortBy
 } from '@/features/tasks/types'
+import { TaskSortBy, TaskStatus } from '@/features/tasks/types'
 
 export function PrdTrackerPage() {
   // State
@@ -180,7 +179,7 @@ export function PrdTrackerPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'todo' }))}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.TODO }))}>
           <CardContent className="pt-6">
             {isStatsLoading ? (
               <div className="space-y-2">
@@ -196,7 +195,7 @@ export function PrdTrackerPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'in_progress' }))}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.IN_PROGRESS }))}>
           <CardContent className="pt-6">
             {isStatsLoading ? (
               <div className="space-y-2">
@@ -212,7 +211,7 @@ export function PrdTrackerPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'review' }))}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.REVIEW }))}>
           <CardContent className="pt-6">
             {isStatsLoading ? (
               <div className="space-y-2">
@@ -228,7 +227,7 @@ export function PrdTrackerPage() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'done' }))}>
+        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.DONE }))}>
           <CardContent className="pt-6">
             {isStatsLoading ? (
               <div className="space-y-2">
@@ -334,7 +333,7 @@ export function PrdTrackerPage() {
               loading={isTasksLoading}
               onTaskClick={handleTaskClick}
               onStatusChange={handleStatusChange}
-              isStatusUpdating={(taskId) => updateTaskMutation.isPending}
+              isStatusUpdating={() => updateTaskMutation.isPending}
               selectedTaskIds={selectedTaskIds}
               onTaskSelect={handleTaskSelect}
               showActions={true}

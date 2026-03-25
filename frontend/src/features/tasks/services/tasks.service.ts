@@ -1,10 +1,11 @@
 import {
-  Task,
   TaskStatus,
   TaskPriority,
   TaskModule,
-  TaskFilters,
-  TaskSortBy,
+  TaskSortBy
+} from '../types'
+import type {
+  Task,
   CreateTaskRequest,
   UpdateTaskRequest,
   GetTasksQuery,

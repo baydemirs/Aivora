@@ -1,29 +1,35 @@
 // Task Domain Types
 
-export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  BLOCKED = 'blocked',
-  REVIEW = 'review',
-  DONE = 'done',
-}
+export const TaskStatus = {
+  TODO: 'todo',
+  IN_PROGRESS: 'in_progress',
+  BLOCKED: 'blocked',
+  REVIEW: 'review',
+  DONE: 'done',
+} as const;
 
-export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
-}
+export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
-export enum TaskModule {
-  AUTH = 'auth',
-  RAG = 'rag',
-  CHAT = 'chat',
-  KNOWLEDGE_BASE = 'knowledge-base',
-  DASHBOARD = 'dashboard',
-  API = 'api',
-  INFRASTRUCTURE = 'infrastructure',
-}
+export const TaskPriority = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  URGENT: 'urgent',
+} as const;
+
+export type TaskPriority = typeof TaskPriority[keyof typeof TaskPriority];
+
+export const TaskModule = {
+  AUTH: 'auth',
+  RAG: 'rag',
+  CHAT: 'chat',
+  KNOWLEDGE_BASE: 'knowledge-base',
+  DASHBOARD: 'dashboard',
+  API: 'api',
+  INFRASTRUCTURE: 'infrastructure',
+} as const;
+
+export type TaskModule = typeof TaskModule[keyof typeof TaskModule];
 
 // Main Task Interface
 export interface Task {
@@ -73,13 +79,15 @@ export interface TaskFilters {
   sortOrder: 'asc' | 'desc'
 }
 
-export enum TaskSortBy {
-  CREATED_AT = 'createdAt',
-  UPDATED_AT = 'updatedAt',
-  TITLE = 'title',
-  PRIORITY = 'priority',
-  STATUS = 'status',
-}
+export const TaskSortBy = {
+  CREATED_AT: 'createdAt',
+  UPDATED_AT: 'updatedAt',
+  TITLE: 'title',
+  PRIORITY: 'priority',
+  STATUS: 'status',
+} as const;
+
+export type TaskSortBy = typeof TaskSortBy[keyof typeof TaskSortBy];
 
 // API Request/Response Types
 export interface CreateTaskRequest {

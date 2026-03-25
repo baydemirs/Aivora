@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@/components/ui'
 import { useAuth } from '@/features/auth/auth-context'
 import { useTaskStats } from '@/features/tasks/hooks/useTasks'
-import { ListTodo, FileText, MessageSquare, CheckCircle, Clock, Building2, AlertCircle, Eye } from 'lucide-react'
+import { ListTodo, FileText, MessageSquare, CheckCircle, Clock, Building2, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 // Mock data for non-task stats - will be replaced with API calls
