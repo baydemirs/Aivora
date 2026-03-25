@@ -9,7 +9,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/auth-context'
-import { Button } from '@/components/ui'
+import { Button, Avatar, AvatarFallback } from '@/components/ui'
 
 const navItems = [
   {
@@ -45,6 +45,16 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     onNavigate?.()
   }
 
+  const getInitials = (name?: string) => {
+    if (!name) return 'U'
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
   return (
     <div className="flex h-full flex-col bg-sidebar">
       {/* Logo */}
@@ -77,11 +87,13 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       {/* Footer */}
       <div className="border-t border-sidebar-border p-4">
         <div className="mb-3 flex items-center gap-3 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
-          </div>
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary text-xs text-primary-foreground">
+              {getInitials(user?.fullName)}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 truncate">
-            <p className="truncate text-sm font-medium">{user?.email}</p>
+            <p className="truncate text-sm font-medium">{user?.fullName || user?.email}</p>
             <p className="text-xs text-muted-foreground">{user?.role}</p>
           </div>
         </div>
