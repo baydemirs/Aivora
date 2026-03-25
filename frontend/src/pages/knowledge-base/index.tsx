@@ -1,219 +1,207 @@
-import { useState, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/components/ui'
-import { Upload, FileText, File, Trash2, Search } from 'lucide-react'
-import type { Document } from '@/types'
-
-// Mock data - will be replaced with API calls
-const mockDocuments: Document[] = [
-  {
-    id: '1',
-    title: 'Product Requirements Document.pdf',
-    tenantId: '1',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-    _count: { chunks: 24 },
-  },
-  {
-    id: '2',
-    title: 'Technical Architecture.docx',
-    tenantId: '1',
-    createdAt: '2024-01-16T14:30:00Z',
-    updatedAt: '2024-01-16T14:30:00Z',
-    _count: { chunks: 18 },
-  },
-  {
-    id: '3',
-    title: 'API Documentation.pdf',
-    tenantId: '1',
-    createdAt: '2024-01-17T09:00:00Z',
-    updatedAt: '2024-01-17T09:00:00Z',
-    _count: { chunks: 42 },
-  },
-  {
-    id: '4',
-    title: 'User Guide.txt',
-    tenantId: '1',
-    createdAt: '2024-01-18T11:00:00Z',
-    updatedAt: '2024-01-18T11:00:00Z',
-    _count: { chunks: 8 },
-  },
-]
-
-const fileTypeIcons: Record<string, string> = {
-  pdf: 'text-red-500',
-  docx: 'text-blue-500',
-  doc: 'text-blue-500',
-  txt: 'text-gray-500',
-}
-
-function getFileExtension(filename: string): string {
-  return filename.split('.').pop()?.toLowerCase() || ''
-}
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button } from '@/components/ui'
+import { FileText } from 'lucide-react'
+import { 
+  useDocuments, 
+  useUploadDocument, 
+  useDeleteDocument,
+  useDocumentStats
+} from '@/features/documents/hooks/useDocuments'
+import type { DocumentFilters as IDocumentFilters, KBDocument } from '@/features/documents/types'
+import { DocumentSortBy } from '@/features/documents/types'
+import { 
+  DocumentUploadZone, 
+  DocumentList, 
+  DocumentFilters, 
+  DocumentDetailDrawer,
+  DeleteDocumentDialog
+} from '@/features/documents/components'
 
 export function KnowledgeBasePage() {
-  const [documents, setDocuments] = useState<Document[]>(mockDocuments)
-  const [isDragging, setIsDragging] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  // State
+  const [filters, setFilters] = useState<IDocumentFilters>({
+    searchQuery: '',
+    status: 'all',
+    fileType: 'all',
+    sortBy: DocumentSortBy.UPLOADED_AT,
+    sortOrder: 'desc'
+  })
+  
+  const [selectedDoc, setSelectedDoc] = useState<KBDocument | null>(null)
+  const [docToDelete, setDocToDelete] = useState<KBDocument | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-  const filteredDocuments = documents.filter(doc =>
-    doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Hooks
+  const { data: listData, isLoading: isListLoading, error: listError } = useDocuments({
+    search: filters.searchQuery,
+    status: filters.status === 'all' ? undefined : filters.status,
+    fileType: filters.fileType === 'all' ? undefined : filters.fileType,
+    sortBy: filters.sortBy,
+    sortOrder: filters.sortOrder,
+    page: 1,
+    limit: 50
+  })
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
+  // We fetch stats just to have it available for the future metrics cards
+  const { data: statsData } = useDocumentStats()
+
+  const uploadMutation = useUploadDocument()
+  const deleteMutation = useDeleteDocument()
+
+  // Handlers
+  const handleFilterChange = (newFilters: Partial<IDocumentFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }))
   }
 
-  const handleDragLeave = () => {
-    setIsDragging(false)
+  const handleUpload = async (files: File[]) => {
+    // In a real app we would upload sequentially or in parallel
+    // Since this is mock with delay, we'll just trigger them all and let React Query handle optimistic UI
+    files.forEach(file => {
+      uploadMutation.mutate(file)
+    })
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    handleFiles(files)
+  const handleRowClick = (doc: KBDocument) => {
+    setSelectedDoc(doc)
+    setIsDetailOpen(true)
   }
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    handleFiles(files)
+  const handleDeleteClick = (doc: KBDocument, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDocToDelete(doc)
+    setIsDeleteDialogOpen(true)
   }
 
-  const handleFiles = async (files: File[]) => {
-    setIsUploading(true)
-    // Simulate upload delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    const newDocs: Document[] = files.map((file, index) => ({
-      id: String(Date.now() + index),
-      title: file.name,
-      tenantId: '1',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      _count: { chunks: Math.floor(Math.random() * 30) + 5 },
-    }))
-
-    setDocuments(prev => [...newDocs, ...prev])
-    setIsUploading(false)
-  }
-
-  const handleDelete = (docId: string) => {
-    setDocuments(prev => prev.filter(d => d.id !== docId))
+  const handleConfirmDelete = async () => {
+    if (!docToDelete) return
+    
+    await deleteMutation.mutateAsync(docToDelete.id)
+    setIsDeleteDialogOpen(false)
+    setDocToDelete(null)
+    
+    // If the detail drawer was open for this document, close it
+    if (selectedDoc?.id === docToDelete.id) {
+      setIsDetailOpen(false)
+      setSelectedDoc(null)
+    }
   }
 
   return (
     <div className="space-y-6">
-      {/* Upload Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-              isDragging
-                ? 'border-primary bg-primary/5'
-                : 'border-muted-foreground/25 hover:border-primary hover:bg-muted/50'
-            }`}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".pdf,.docx,.doc,.txt"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-            <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-            <p className="mt-4 text-lg font-medium">
-              {isUploading ? 'Uploading...' : 'Drop files here or click to upload'}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Supports PDF, DOCX, DOC, and TXT files
-            </p>
-            {isUploading && (
-              <div className="mt-4">
-                <div className="mx-auto h-2 w-48 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
-                </div>
-              </div>
-            )}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Knowledge Base</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your organization's documents and RAG vector embeddings
+          </p>
+        </div>
+        
+        {/* Simple top-level stat indicating total ready documents vs total */}
+        {statsData && (
+          <div className="bg-muted px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <span className="font-semibold">{statsData.byStatus.ready}</span>
+             <span className="text-muted-foreground">ready of</span>
+            <span className="font-semibold">{statsData.total}</span>
+            <span className="text-muted-foreground">documents</span>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      {/* Document List */}
+      {/* Upload Area */}
+      <DocumentUploadZone 
+        onUpload={handleUpload} 
+        isUploading={uploadMutation.isPending} 
+      />
+
+      {/* Main Content Area */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Documents ({documents.length})</CardTitle>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search documents..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border bg-background py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+        <CardHeader className="pb-4">
+           <div className="flex flex-col space-y-4">
+            <div>
+              <CardTitle>Documents</CardTitle>
+              <CardDescription>
+                Browse and manage uploaded files and their embedding status
+              </CardDescription>
+            </div>
+            
+            <DocumentFilters 
+              filters={filters} 
+              onFilterChange={handleFilterChange} 
+              disabled={isListLoading && !listData}
             />
           </div>
         </CardHeader>
         <CardContent>
-          {filteredDocuments.length === 0 ? (
-            <div className="py-12 text-center">
-              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-4 text-muted-foreground">
-                {searchQuery ? 'No documents match your search' : 'No documents uploaded yet'}
+          {listError ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center">
+               <div className="h-12 w-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
+                 <FileText className="h-6 w-6" />
+               </div>
+               <p className="text-lg font-medium">Failed to load documents</p>
+               <p className="text-muted-foreground max-w-sm mt-1 mb-4">
+                 There was an error communicating with the server. Please check your connection and try again.
+               </p>
+               <Button variant="outline" onClick={() => window.location.reload()}>
+                 Retry
+               </Button>
+            </div>
+          ) : !isListLoading && listData?.documents.length === 0 ? (
+            <div className="py-16 flex flex-col items-center justify-center text-center border rounded-lg border-dashed bg-muted/30">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                <FileText className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-medium text-foreground">No documents found</p>
+              <p className="text-muted-foreground max-w-sm mt-1">
+                {filters.searchQuery || filters.status !== 'all' || filters.fileType !== 'all'
+                  ? "We couldn't find any documents matching your current filters. Try adjusting your search criteria."
+                  : "You haven't uploaded any documents yet. Drag and drop a file above to get started."}
               </p>
+              {(filters.searchQuery || filters.status !== 'all' || filters.fileType !== 'all') && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setFilters({
+                    searchQuery: '',
+                    status: 'all',
+                    fileType: 'all',
+                    sortBy: DocumentSortBy.UPLOADED_AT,
+                    sortOrder: 'desc'
+                  })}
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredDocuments.map((doc) => {
-                const ext = getFileExtension(doc.title)
-                const iconColor = fileTypeIcons[ext] || 'text-gray-500'
-
-                return (
-                  <div
-                    key={doc.id}
-                    className="group relative rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="flex items-start gap-3">
-                      <File className={`h-8 w-8 flex-shrink-0 ${iconColor}`} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium" title={doc.title}>
-                          {doc.title}
-                        </p>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {doc._count?.chunks || 0} chunks
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(doc.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={() => handleDelete(doc.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                )
-              })}
-            </div>
+            <DocumentList 
+              documents={listData?.documents || []} 
+              loading={isListLoading}
+              onRowClick={handleRowClick}
+              onDeleteClick={handleDeleteClick}
+            />
           )}
         </CardContent>
       </Card>
+
+      {/* Drawer & Dialog */}
+      <DocumentDetailDrawer
+        document={selectedDoc}
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        onDelete={() => {
+          setDocToDelete(selectedDoc)
+          setIsDeleteDialogOpen(true)
+        }}
+      />
+
+      <DeleteDocumentDialog
+        document={docToDelete}
+        open={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   )
 }
