@@ -48,7 +48,7 @@ export interface Task {
   createdAt: string
   updatedAt: string
   completedAt?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 // Task Statistics
@@ -98,7 +98,7 @@ export interface CreateTaskRequest {
   assigneeId?: string
   estimatedHours?: number
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface UpdateTaskRequest {
@@ -111,7 +111,7 @@ export interface UpdateTaskRequest {
   estimatedHours?: number
   actualHours?: number
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface GetTasksQuery {

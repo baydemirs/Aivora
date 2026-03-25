@@ -3,39 +3,70 @@ const USER_KEY = 'aivora_user'
 
 export const storage = {
   getToken: (): string | null => {
-    return localStorage.getItem(TOKEN_KEY)
+    try {
+      return localStorage.getItem(TOKEN_KEY)
+    } catch {
+      return null
+    }
   },
 
   setToken: (token: string): void => {
-    localStorage.setItem(TOKEN_KEY, token)
+    try {
+      localStorage.setItem(TOKEN_KEY, token)
+    } catch (e) {
+      console.error('Failed to save token to localStorage:', e)
+    }
   },
 
   removeToken: (): void => {
-    localStorage.removeItem(TOKEN_KEY)
+    try {
+      localStorage.removeItem(TOKEN_KEY)
+    } catch {
+      // silently ignore
+    }
   },
 
   getUser: <T>(): T | null => {
-    const user = localStorage.getItem(USER_KEY)
-    if (user) {
-      try {
-        return JSON.parse(user) as T
-      } catch {
-        return null
+    try {
+      const raw = localStorage.getItem(USER_KEY)
+      if (!raw || raw === 'undefined' || raw === 'null') return null
+      const parsed = JSON.parse(raw)
+      // Basic shape validation: must be an object with an id
+      if (parsed && typeof parsed === 'object' && 'id' in parsed) {
+        return parsed as T
       }
+      // Invalid shape — clean up
+      localStorage.removeItem(USER_KEY)
+      return null
+    } catch {
+      // Corrupted JSON — clean up
+      try { localStorage.removeItem(USER_KEY) } catch { /* noop */ }
+      return null
     }
-    return null
   },
 
   setUser: <T>(user: T): void => {
-    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    try {
+      localStorage.setItem(USER_KEY, JSON.stringify(user))
+    } catch (e) {
+      console.error('Failed to save user to localStorage:', e)
+    }
   },
 
   removeUser: (): void => {
-    localStorage.removeItem(USER_KEY)
+    try {
+      localStorage.removeItem(USER_KEY)
+    } catch {
+      // silently ignore
+    }
   },
 
   clear: (): void => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    try {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_KEY)
+    } catch {
+      // silently ignore
+    }
   },
 }

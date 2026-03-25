@@ -16,6 +16,7 @@ import {
 import type {
   Task,
   TaskFilters as TaskFiltersType,
+  GetTasksQuery,
 } from '@/features/tasks/types'
 import { TaskSortBy, TaskStatus } from '@/features/tasks/types'
 
@@ -36,22 +37,16 @@ export function PrdTrackerPage() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 
   // Prepare query parameters for API
-  const queryParams = useMemo(() => {
-    const params: any = {
+  const queryParams = useMemo((): GetTasksQuery => {
+    return {
       search: filters.searchQuery || undefined,
       status: filters.status !== 'all' ? filters.status : undefined,
       priority: filters.priority !== 'all' ? filters.priority : undefined,
       module: filters.module !== 'all' ? filters.module : undefined,
-      assignee: filters.assignee !== 'all' ? filters.assignee : undefined,
       sortBy: filters.sortBy,
       sortOrder: filters.sortOrder,
-      limit: 50
+      limit: 50,
     }
-
-    // Remove undefined values
-    return Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value !== undefined)
-    )
   }, [filters])
 
   // API calls
