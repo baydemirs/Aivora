@@ -1,6 +1,7 @@
 import { Menu, User, LogOut, ChevronDown } from 'lucide-react'
 import { Button, Avatar, AvatarFallback } from '@/components/ui'
 import { useAuth } from '@/features/auth/auth-context'
+import { getInitials } from '@/utils/format'
 import { useState, useRef, useEffect } from 'react'
 
 interface TopbarProps {
@@ -13,7 +14,7 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -21,21 +22,23 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
       }
     }
 
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsDropdownOpen(false)
+      }
+    }
+
     if (isDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscape)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+        document.removeEventListener('keydown', handleEscape)
+      }
     }
   }, [isDropdownOpen])
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'U'
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
+
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">

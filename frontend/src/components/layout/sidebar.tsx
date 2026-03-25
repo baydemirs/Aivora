@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/auth-context'
 import { Button, Avatar, AvatarFallback } from '@/components/ui'
+import { getInitials } from '@/utils/format'
 
 const navItems = [
   {
@@ -45,15 +46,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     onNavigate?.()
   }
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'U'
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
+
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
