@@ -155,6 +155,40 @@ const MOCK_TASKS: Task[] = [
   }
 ]
 
+type SortableTaskValue = string | number | undefined
+
+const priorityWeights: Record<TaskPriority, number> = {
+  [TaskPriority.LOW]: 1,
+  [TaskPriority.MEDIUM]: 2,
+  [TaskPriority.HIGH]: 3,
+  [TaskPriority.URGENT]: 4,
+}
+
+function getSortableTaskValue(task: Task, sortBy: TaskSortBy): SortableTaskValue {
+  if (sortBy === TaskSortBy.PRIORITY) {
+    return priorityWeights[task.priority]
+  }
+
+  const value = task[sortBy]
+
+  if (typeof value === 'string') {
+    return value.toLowerCase()
+  }
+
+  if (typeof value === 'number') {
+    return value
+  }
+
+  return undefined
+}
+
+function compareSortableValues(a: SortableTaskValue, b: SortableTaskValue): number {
+  if (a === b) return 0
+  if (a === undefined) return 1
+  if (b === undefined) return -1
+  return a > b ? 1 : -1
+}
+
 class MockTaskService {
   private tasks: Task[] = [...MOCK_TASKS]
   private delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -208,26 +242,12 @@ class MockTaskService {
 
     // Sorting
     filteredTasks.sort((a, b) => {
-      let aVal: any = a[sortBy as keyof Task]
-      let bVal: any = b[sortBy as keyof Task]
+      const comparison = compareSortableValues(
+        getSortableTaskValue(a, sortBy),
+        getSortableTaskValue(b, sortBy),
+      )
 
-      if (sortBy === TaskSortBy.PRIORITY) {
-        // Custom priority sorting by weight
-        const priorityWeights = { low: 1, medium: 2, high: 3, urgent: 4 }
-        aVal = priorityWeights[a.priority]
-        bVal = priorityWeights[b.priority]
-      }
-
-      if (typeof aVal === 'string') {
-        aVal = aVal.toLowerCase()
-        bVal = bVal.toLowerCase()
-      }
-
-      if (sortOrder === 'asc') {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
-      }
+      return sortOrder === 'asc' ? comparison : -comparison
     })
 
     // Pagination

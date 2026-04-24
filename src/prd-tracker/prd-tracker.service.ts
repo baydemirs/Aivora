@@ -23,7 +23,11 @@ export class PrdTrackerService {
     });
   }
 
-  async updateStatus(id: string, updateDto: UpdatePrdTaskDto, tenantId: string) {
+  async updateStatus(
+    id: string,
+    updateDto: UpdatePrdTaskDto,
+    tenantId: string,
+  ) {
     // Verify ownership and existence
     const task = await this.prisma.prdTask.findFirst({
       where: { id, tenantId },

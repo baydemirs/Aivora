@@ -16,7 +16,10 @@ export class QdrantService implements OnModuleInit {
 
   constructor(private readonly configService: ConfigService) {
     this.client = new QdrantClient({
-      url: this.configService.get<string>('QDRANT_URL', 'http://localhost:6333'),
+      url: this.configService.get<string>(
+        'QDRANT_URL',
+        'http://localhost:6333',
+      ),
     });
   }
 
@@ -61,7 +64,9 @@ export class QdrantService implements OnModuleInit {
     vector: number[],
     tenantId: string,
     limit = 5,
-  ): Promise<{ id: string; score: number; payload: Record<string, unknown> }[]> {
+  ): Promise<
+    { id: string; score: number; payload: Record<string, unknown> }[]
+  > {
     const results = await this.client.search(this.collectionName, {
       vector,
       limit,

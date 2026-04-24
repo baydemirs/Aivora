@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { RagService } from '../rag/rag.service';
+import { RagResponse, RagService } from '../rag/rag.service';
 import { SendMessageDto } from './dto/send-message.dto';
 
 @Injectable()
@@ -36,14 +36,15 @@ export class ChatService {
 
     // 2. Get AI response via RAG FIRST, before saving any messages
     //    This prevents orphaned user messages if RAG/OpenAI fails
-    let ragResponse;
+    let ragResponse: RagResponse;
     try {
       ragResponse = await this.ragService.askQuestion(dto.message, tenantId);
     } catch (error) {
       this.logger.error('RAG pipeline failed', error);
       // Provide a graceful fallback instead of crashing
       ragResponse = {
-        answer: 'I was unable to process your request at this time. Please try again later.',
+        answer:
+          'I was unable to process your request at this time. Please try again later.',
         confidence: 0,
         sourcesCount: 0,
         taskCreated: false,

@@ -8,7 +8,7 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react'
-import { useAuth } from '@/features/auth/auth-context'
+import { useAuth } from '@/features/auth/use-auth'
 import { Button, Avatar, AvatarFallback } from '@/components/ui'
 import { getInitials } from '@/utils/format'
 

@@ -21,10 +21,7 @@ export class RagService {
     private readonly prdTrackerService: PrdTrackerService,
   ) {}
 
-  async askQuestion(
-    question: string,
-    tenantId: string,
-  ): Promise<RagResponse> {
+  async askQuestion(question: string, tenantId: string): Promise<RagResponse> {
     // 1. Generate query embedding
     const queryVector = await this.openaiService.generateEmbedding(question);
 

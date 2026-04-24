@@ -1,6 +1,6 @@
 import { Menu, User, LogOut, ChevronDown } from 'lucide-react'
 import { Button, Avatar, AvatarFallback } from '@/components/ui'
-import { useAuth } from '@/features/auth/auth-context'
+import { useAuth } from '@/features/auth/use-auth'
 import { getInitials } from '@/utils/format'
 import { useState, useRef, useEffect } from 'react'
 

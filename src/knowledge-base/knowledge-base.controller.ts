@@ -20,9 +20,11 @@ export class KnowledgeBaseController {
   constructor(private readonly knowledgeBaseService: KnowledgeBaseService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB absolute limit for multer
-  }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB absolute limit for multer
+    }),
+  )
   upload(
     @UploadedFile(
       new ParseFilePipe({
@@ -30,7 +32,8 @@ export class KnowledgeBaseController {
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10 MB limit for validation response
         ],
       }),
-    ) file: Express.Multer.File,
+    )
+    file: Express.Multer.File,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.knowledgeBaseService.uploadDocument(file, user.tenantId);
