@@ -15,6 +15,3 @@ node_modules/
 .idea/
 *.swp
 *.swo
-
-# Local runtime logs
-.codex-*.log

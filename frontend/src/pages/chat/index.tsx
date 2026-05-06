@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { Card, Button, Sheet, SheetContent } from '@/components/ui'
+import { Button, Sheet, SheetContent } from '@/components/ui'
 import { Menu } from 'lucide-react'
 import {
   useConversations,
@@ -15,94 +15,81 @@ import {
   MessageComposer,
   EmptyChatState,
 } from '@/features/chat/components'
-import { toPublicErrorMessage } from '@/lib/errors'
-import { logDevError } from '@/lib/logger'
 
 export function ChatPage() {
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
+  const [activeConversationId, setActiveConversationId] = useState<string | null>('conv-1')
   const [searchQuery, setSearchQuery] = useState('')
   const [mobileListOpen, setMobileListOpen] = useState(false)
-  const [actionError, setActionError] = useState('')
 
+  // Queries
   const { data: conversationsData, isLoading: isLoadingConversations } = useConversations({
     search: searchQuery || undefined,
   })
+  const { data: messages, isLoading: isLoadingMessages } = useMessages(activeConversationId)
 
+  // Mutations
   const sendMessageMutation = useSendMessage()
   const createConversationMutation = useCreateConversation()
   const deleteConversationMutation = useDeleteConversation()
 
-  const conversations = useMemo(() => conversationsData?.conversations || [], [conversationsData])
-  const resolvedActiveConversationId = useMemo(() => {
-    if (activeConversationId && conversations.some((c) => c.id === activeConversationId)) {
-      return activeConversationId
-    }
-    return conversations.length > 0 ? conversations[0].id : null
-  }, [activeConversationId, conversations])
-  const { data: messages, isLoading: isLoadingMessages } = useMessages(resolvedActiveConversationId)
-  const activeConversation =
-    conversations.find((c) => c.id === resolvedActiveConversationId) || null
+  const conversations = useMemo(
+    () => conversationsData?.conversations ?? [],
+    [conversationsData?.conversations],
+  )
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.id === activeConversationId) ?? null,
+    [activeConversationId, conversations],
+  )
 
-  const handleSelectConversation = useCallback((id: string) => {
-    setActionError('')
-    setActiveConversationId(id)
-    setMobileListOpen(false)
-  }, [])
+  // Handlers
+  const handleSelectConversation = useCallback(
+    (id: string) => {
+      setActiveConversationId(id)
+      setMobileListOpen(false)
+    },
+    [],
+  )
 
   const handleNewConversation = useCallback(async () => {
-    if (createConversationMutation.isPending) return
     try {
-      setActionError('')
       const newConv = await createConversationMutation.mutateAsync(undefined)
       setActiveConversationId(newConv.id)
       setMobileListOpen(false)
     } catch (error) {
-      logDevError('Failed to create conversation.', error)
-      setActionError(toPublicErrorMessage(error, 'Failed to create conversation'))
+      console.error('Failed to create conversation:', error)
     }
   }, [createConversationMutation])
 
   const handleSendMessage = useCallback(
-    async (content: string) => {
-      if (!resolvedActiveConversationId || !content.trim() || sendMessageMutation.isPending) return
-      try {
-        setActionError('')
-        const result = await sendMessageMutation.mutateAsync({
-          conversationId: resolvedActiveConversationId,
-          content,
-        })
-
-        if (result.conversationId !== resolvedActiveConversationId) {
-          setActiveConversationId(result.conversationId)
-        }
-      } catch (error) {
-        logDevError('Failed to send message.', error)
-        setActionError(toPublicErrorMessage(error, 'Failed to send message'))
-      }
+    (content: string) => {
+      if (!activeConversationId || !content.trim()) return
+      sendMessageMutation.mutate({
+        conversationId: activeConversationId,
+        content,
+      })
     },
-    [resolvedActiveConversationId, sendMessageMutation],
+    [activeConversationId, sendMessageMutation],
   )
 
   const handleDeleteConversation = useCallback(async () => {
-    if (!resolvedActiveConversationId || deleteConversationMutation.isPending) return
+    if (!activeConversationId) return
     const confirmed = window.confirm('Are you sure you want to delete this conversation?')
     if (!confirmed) return
-
     try {
-      setActionError('')
-      await deleteConversationMutation.mutateAsync(resolvedActiveConversationId)
-      const remaining = conversations.filter((c) => c.id !== resolvedActiveConversationId)
+      await deleteConversationMutation.mutateAsync(activeConversationId)
+      // Select another conversation or clear
+      const remaining = conversations.filter((c) => c.id !== activeConversationId)
       setActiveConversationId(remaining.length > 0 ? remaining[0].id : null)
     } catch (error) {
-      logDevError('Failed to delete conversation.', error)
-      setActionError(toPublicErrorMessage(error, 'Failed to delete conversation'))
+      console.error('Failed to delete conversation:', error)
     }
-  }, [resolvedActiveConversationId, conversations, deleteConversationMutation])
+  }, [activeConversationId, conversations, deleteConversationMutation])
 
+  // Shared sidebar content
   const sidebarContent = (
     <ConversationList
       conversations={conversations}
-      activeId={resolvedActiveConversationId}
+      activeId={activeConversationId}
       onSelect={handleSelectConversation}
       onNewConversation={handleNewConversation}
       isLoading={isLoadingConversations}
@@ -113,37 +100,34 @@ export function ChatPage() {
   )
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-4">
-      <Card className="hidden w-80 shrink-0 overflow-hidden md:flex md:flex-col">
+    <div className="flex h-[calc(100vh-7rem)] gap-4">
+      {/* Desktop Sidebar */}
+      <div className="hidden w-80 shrink-0 md:flex md:flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         {sidebarContent}
-      </Card>
+      </div>
 
+      {/* Mobile Sheet */}
       <Sheet open={mobileListOpen} onOpenChange={setMobileListOpen}>
         <SheetContent side="left" className="w-80 p-0">
           {sidebarContent}
         </SheetContent>
       </Sheet>
 
-      <Card className="flex flex-1 flex-col overflow-hidden">
-        {actionError && (
-          <div className="border-b border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-            {actionError}
-          </div>
-        )}
-
-        {resolvedActiveConversationId ? (
+      {/* Chat Area */}
+      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+        {activeConversationId ? (
           <>
+            {/* Header with mobile menu trigger */}
             <div className="flex items-center">
               <Button
                 variant="ghost"
                 size="sm"
                 className="ml-2 h-8 w-8 p-0 md:hidden"
                 onClick={() => setMobileListOpen(true)}
-                aria-label="Open conversations list"
               >
                 <Menu className="h-4 w-4" />
               </Button>
-              <div className="min-w-0 flex-1">
+              <div className="flex-1">
                 <ChatHeader
                   conversation={activeConversation}
                   messageCount={messages?.length || 0}
@@ -153,32 +137,40 @@ export function ChatPage() {
               </div>
             </div>
 
+            {/* Messages */}
             <MessageList
               messages={messages || []}
               isLoading={isLoadingMessages}
               isAiResponding={sendMessageMutation.isPending}
             />
 
-            <MessageComposer onSend={handleSendMessage} isSending={sendMessageMutation.isPending} />
+            {/* Composer */}
+            <MessageComposer
+              onSend={handleSendMessage}
+              isSending={sendMessageMutation.isPending}
+            />
           </>
         ) : (
           <>
-            <div className="flex items-center border-b px-4 py-3 md:hidden">
+            {/* Mobile menu trigger in empty state */}
+            <div className="flex items-center md:hidden border-b border-border/60 px-4 py-3">
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => setMobileListOpen(true)}
-                aria-label="Open conversations list"
               >
                 <Menu className="h-4 w-4" />
               </Button>
               <span className="ml-2 text-sm font-medium">Conversations</span>
             </div>
-            <EmptyChatState variant="no-conversation" onNewConversation={handleNewConversation} />
+            <EmptyChatState
+              variant="no-conversation"
+              onNewConversation={handleNewConversation}
+            />
           </>
         )}
-      </Card>
+      </div>
     </div>
   )
 }

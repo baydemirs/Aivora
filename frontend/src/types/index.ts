@@ -14,19 +14,12 @@ export interface LoginRequest {
   email: string
   password: string
 }
-export type LoginPayload = LoginRequest
 
 export interface RegisterRequest {
   fullName: string
   email: string
   password: string
   tenantName: string
-}
-export type RegisterPayload = RegisterRequest
-
-export interface TenantSummary {
-  id: string
-  name: string
 }
 
 export interface AuthResponse {

@@ -13,7 +13,7 @@ export const chatService = {
   },
 
   sendMessage: async (data: SendMessageRequest): Promise<ChatResponse> => {
-    const response = await apiClient.post<ChatResponse>('/chat', data)
+    const response = await apiClient.post<ChatResponse>('/chat/send', data)
     return response.data
   },
 }
