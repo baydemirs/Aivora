@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { Card, Button, Sheet, SheetContent } from '@/components/ui'
+import { Button, Sheet, SheetContent } from '@/components/ui'
 import { Menu } from 'lucide-react'
 import {
   useConversations,
@@ -100,11 +100,11 @@ export function ChatPage() {
   )
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-4">
+    <div className="flex h-[calc(100vh-7rem)] gap-4">
       {/* Desktop Sidebar */}
-      <Card className="hidden w-80 shrink-0 md:flex md:flex-col overflow-hidden">
+      <div className="hidden w-80 shrink-0 md:flex md:flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         {sidebarContent}
-      </Card>
+      </div>
 
       {/* Mobile Sheet */}
       <Sheet open={mobileListOpen} onOpenChange={setMobileListOpen}>
@@ -114,7 +114,7 @@ export function ChatPage() {
       </Sheet>
 
       {/* Chat Area */}
-      <Card className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
         {activeConversationId ? (
           <>
             {/* Header with mobile menu trigger */}
@@ -153,7 +153,7 @@ export function ChatPage() {
         ) : (
           <>
             {/* Mobile menu trigger in empty state */}
-            <div className="flex items-center md:hidden border-b px-4 py-3">
+            <div className="flex items-center md:hidden border-b border-border/60 px-4 py-3">
               <Button
                 variant="ghost"
                 size="sm"
@@ -170,7 +170,7 @@ export function ChatPage() {
             />
           </>
         )}
-      </Card>
+      </div>
     </div>
   )
 }

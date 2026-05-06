@@ -11,7 +11,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({ conversation, messageCount, onDelete, isDeleting }: ChatHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b px-4 py-3 bg-background shrink-0">
+    <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 bg-card shrink-0">
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
           <Sparkles className="h-4 w-4 text-primary" />
@@ -21,16 +21,19 @@ export function ChatHeader({ conversation, messageCount, onDelete, isDeleting }:
             {conversation?.title || 'AI Assistant'}
           </h2>
           {conversation && (
-            <p className="text-xs text-muted-foreground">
-              Knowledge-base powered chat
-            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <p className="text-xs text-muted-foreground">
+                Online
+              </p>
+            </div>
           )}
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
         {conversation && (
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs font-normal">
             {messageCount} messages
           </Badge>
         )}

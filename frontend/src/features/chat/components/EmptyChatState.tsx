@@ -1,4 +1,4 @@
-import { Bot, MessageSquarePlus } from 'lucide-react'
+import { MessageSquarePlus, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui'
 
 interface EmptyChatStateProps {
@@ -10,8 +10,8 @@ export function EmptyChatState({ variant, onNewConversation }: EmptyChatStatePro
   if (variant === 'no-conversation') {
     return (
       <div className="flex h-full flex-col items-center justify-center text-center px-6">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <MessageSquarePlus className="h-8 w-8 text-muted-foreground/60" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/80">
+          <MessageSquarePlus className="h-8 w-8 text-muted-foreground/50" />
         </div>
         <h3 className="mt-5 text-lg font-semibold text-foreground">
           Select a conversation
@@ -31,8 +31,8 @@ export function EmptyChatState({ variant, onNewConversation }: EmptyChatStatePro
 
   return (
     <div className="flex h-full flex-col items-center justify-center text-center px-6">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-        <Bot className="h-8 w-8 text-primary/60" />
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+        <Sparkles className="h-8 w-8 text-primary/60" />
       </div>
       <h3 className="mt-5 text-lg font-semibold text-foreground">
         Start a conversation
@@ -40,6 +40,21 @@ export function EmptyChatState({ variant, onNewConversation }: EmptyChatStatePro
       <p className="mt-2 max-w-sm text-sm text-muted-foreground leading-relaxed">
         Ask questions about your documents and get AI-powered answers based on your knowledge base.
       </p>
+      {/* Suggestion chips */}
+      <div className="mt-6 flex flex-wrap gap-2 justify-center max-w-md">
+        {[
+          'What documents do I have?',
+          'Summarize my latest upload',
+          'Help me find specific info',
+        ].map((suggestion) => (
+          <button
+            key={suggestion}
+            className="rounded-full border border-border/60 bg-muted/40 px-3.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {suggestion}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
