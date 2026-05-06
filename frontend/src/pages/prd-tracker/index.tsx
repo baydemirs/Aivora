@@ -19,8 +19,10 @@ import type {
   GetTasksQuery,
 } from '@/features/tasks/types'
 import { TaskSortBy, TaskStatus } from '@/features/tasks/types'
+import { useI18n } from '@/i18n'
 
 export function PrdTrackerPage() {
+  const { t } = useI18n()
   // State
   const [filters, setFilters] = useState<TaskFiltersType>({
     searchQuery: '',
@@ -131,9 +133,9 @@ export function PrdTrackerPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">PRD Tracker</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('tasks.title')}</h1>
           <p className="text-muted-foreground">
-            Manage and track product requirements and development tasks
+            {t('tasks.subtitle')}
           </p>
         </div>
 
@@ -146,12 +148,12 @@ export function PrdTrackerPage() {
             className="flex items-center gap-2"
           >
             <RotateCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('common.refresh')}
           </Button>
 
           <Button className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            New Task
+            {t('tasks.newTask')}
           </Button>
         </div>
       </div>
@@ -168,7 +170,7 @@ export function PrdTrackerPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{stats.total}</div>
-                <p className="text-xs text-muted-foreground">Total Tasks</p>
+                <p className="text-xs text-muted-foreground">{t('tasks.totalTasks')}</p>
               </>
             )}
           </CardContent>
@@ -184,7 +186,7 @@ export function PrdTrackerPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold text-gray-600">{stats.todo}</div>
-                <p className="text-xs text-muted-foreground">To Do</p>
+                <p className="text-xs text-muted-foreground">{t('tasks.todo')}</p>
               </>
             )}
           </CardContent>
@@ -200,7 +202,7 @@ export function PrdTrackerPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
-                <p className="text-xs text-muted-foreground">In Progress</p>
+                <p className="text-xs text-muted-foreground">{t('tasks.inProgress')}</p>
               </>
             )}
           </CardContent>
@@ -216,7 +218,7 @@ export function PrdTrackerPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold text-yellow-600">{stats.review}</div>
-                <p className="text-xs text-muted-foreground">Review</p>
+                <p className="text-xs text-muted-foreground">{t('tasks.review')}</p>
               </>
             )}
           </CardContent>
@@ -232,7 +234,7 @@ export function PrdTrackerPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold text-green-600">{stats.done}</div>
-                <p className="text-xs text-muted-foreground">Done</p>
+                <p className="text-xs text-muted-foreground">{t('tasks.done')}</p>
               </>
             )}
           </CardContent>
@@ -244,7 +246,7 @@ export function PrdTrackerPage() {
         <CardHeader className="pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <Filter className="h-4 w-4" />
-            Filters
+            {t('common.filters')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -262,7 +264,7 @@ export function PrdTrackerPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
-                {selectedTaskIds.length} task{selectedTaskIds.length > 1 ? 's' : ''} selected
+                {selectedTaskIds.length} {t('tasks.selected')}
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -270,7 +272,7 @@ export function PrdTrackerPage() {
                   size="sm"
                   onClick={() => setSelectedTaskIds([])}
                 >
-                  Clear
+                  {t('tasks.clear')}
                 </Button>
                 <Button
                   variant="outline"
@@ -278,7 +280,7 @@ export function PrdTrackerPage() {
                   className="flex items-center gap-2"
                 >
                   <Download className="h-4 w-4" />
-                  Export
+                  {t('tasks.export')}
                 </Button>
               </div>
             </div>
@@ -291,10 +293,10 @@ export function PrdTrackerPage() {
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
-              Tasks
+              {t('tasks.task')}
               {tasksResponse?.totalCount && (
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({tasksResponse.totalCount} total)
+                  ({tasksResponse.totalCount} {t('tasks.total')})
                 </span>
               )}
             </CardTitle>
@@ -308,7 +310,7 @@ export function PrdTrackerPage() {
                   onClick={handleFiltersReset}
                   className="text-muted-foreground"
                 >
-                  Reset filters
+                  {t('tasks.resetFilters')}
                 </Button>
               ) : null}
             </div>
@@ -317,9 +319,9 @@ export function PrdTrackerPage() {
         <CardContent>
           {hasError ? (
             <div className="text-center py-12">
-              <div className="text-destructive mb-2">Failed to load tasks</div>
+              <div className="text-destructive mb-2">{t('tasks.failedToLoad')}</div>
               <Button variant="outline" onClick={handleRefresh}>
-                Try again
+                {t('tasks.tryAgain')}
               </Button>
             </div>
           ) : (
@@ -341,7 +343,7 @@ export function PrdTrackerPage() {
       {tasksResponse && tasksResponse.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Page {tasksResponse.currentPage} of {tasksResponse.totalPages}
+            {t('tasks.pageOf', { current: tasksResponse.currentPage, total: tasksResponse.totalPages })}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -349,14 +351,14 @@ export function PrdTrackerPage() {
               size="sm"
               disabled={!tasksResponse.hasPrev}
             >
-              Previous
+              {t('tasks.previous')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               disabled={!tasksResponse.hasNext}
             >
-              Next
+              {t('tasks.next')}
             </Button>
           </div>
         </div>

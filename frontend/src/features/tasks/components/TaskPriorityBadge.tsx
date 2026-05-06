@@ -6,6 +6,7 @@ import {
   ArrowUp,
   AlertTriangle
 } from 'lucide-react'
+import { useI18n } from '@/i18n'
 
 interface TaskPriorityBadgeProps {
   priority: TaskPriority
@@ -25,6 +26,7 @@ export function TaskPriorityBadge({
   showIcon = true,
   size = 'md'
 }: TaskPriorityBadgeProps) {
+  const { t } = useI18n()
   const config = TASK_PRIORITY_CONFIG[priority]
   const Icon = priorityIcons[priority]
 
@@ -41,7 +43,12 @@ export function TaskPriorityBadge({
       {showIcon && (
         <Icon className={iconSize} />
       )}
-      {config.label}
+      {{
+        Low: t('tasks.low'),
+        Medium: t('tasks.medium'),
+        High: t('tasks.high'),
+        Urgent: t('tasks.urgent'),
+      }[config.label] || config.label}
     </Badge>
   )
 }

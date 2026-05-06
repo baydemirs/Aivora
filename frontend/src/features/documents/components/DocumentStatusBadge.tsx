@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui'
 import { DocumentStatus, DOCUMENT_STATUS_CONFIG } from '../types'
 import { CheckCircle, AlertCircle, Loader2, Upload, Archive } from 'lucide-react'
+import { useI18n } from '@/i18n'
 
 interface DocumentStatusBadgeProps {
   status: DocumentStatus
@@ -8,6 +9,7 @@ interface DocumentStatusBadgeProps {
 }
 
 export function DocumentStatusBadge({ status, className = '' }: DocumentStatusBadgeProps) {
+  const { t } = useI18n()
   const config = DOCUMENT_STATUS_CONFIG[status] || DOCUMENT_STATUS_CONFIG[DocumentStatus.ERROR]
 
   const getIcon = () => {
@@ -33,7 +35,13 @@ export function DocumentStatusBadge({ status, className = '' }: DocumentStatusBa
       className={`${config.bgColor} ${config.textColor} border-transparent flex items-center shrink-0 w-fit ${className}`}
     >
       {getIcon()}
-      {config.label}
+      {{
+        Uploading: t('doc.uploading'),
+        Processing: t('doc.processing'),
+        Ready: t('doc.ready'),
+        Error: t('doc.error'),
+        Archived: t('doc.archived'),
+      }[config.label] || config.label}
     </Badge>
   )
 }

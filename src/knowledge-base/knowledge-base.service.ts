@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { PDFParse } from 'pdf-parse';
+import * as mammoth from 'mammoth';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../database/prisma.service';
 import { OpenaiService } from '../openai/openai.service';
@@ -23,10 +25,7 @@ export class KnowledgeBaseService {
   /**
    * Full pipeline: parse file → chunk → embed → store in Qdrant + Postgres
    */
-  async uploadDocument(
-    file: Express.Multer.File,
-    tenantId: string,
-  ) {
+  async uploadDocument(file: Express.Multer.File, tenantId: string) {
     // Validate file exists
     if (!file || !file.buffer) {
       throw new BadRequestException('No file provided or file is empty');
@@ -44,12 +43,17 @@ export class KnowledgeBaseService {
     try {
       text = await this.extractText(file);
     } catch (error) {
-      this.logger.error(`Failed to extract text from "${file.originalname}"`, error);
+      this.logger.error(
+        `Failed to extract text from "${file.originalname}"`,
+        error,
+      );
       throw new BadRequestException('Failed to parse the uploaded file');
     }
 
     if (!text || text.trim().length < 10) {
-      throw new BadRequestException('The uploaded file contains no extractable text');
+      throw new BadRequestException(
+        'The uploaded file contains no extractable text',
+      );
     }
 
     // 2. Save document metadata to Postgres
@@ -61,7 +65,8 @@ export class KnowledgeBaseService {
     const chunks = this.splitTextIntoChunks(text, 800);
 
     // 4. Generate embeddings & store in Qdrant + Postgres
-    const savedChunks: { id: string; content: string; embeddingId: string }[] = [];
+    const savedChunks: { id: string; content: string; embeddingId: string }[] =
+      [];
 
     for (const chunkText of chunks) {
       const embeddingId = uuidv4();
@@ -93,7 +98,10 @@ export class KnowledgeBaseService {
 
         savedChunks.push(savedChunk);
       } catch (error) {
-        this.logger.error(`Failed to process chunk for doc "${document.id}"`, error);
+        this.logger.error(
+          `Failed to process chunk for doc "${document.id}"`,
+          error,
+        );
         // Both Qdrant and Postgres writes are in the same block —
         // if Prisma fails after Qdrant succeeds, an orphan vector exists,
         // but it won't be referenced and will be harmless in filtered searches.
@@ -131,18 +139,20 @@ export class KnowledgeBaseService {
     const mimeType = file.mimetype;
 
     if (mimeType === 'application/pdf') {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const pdfParse = require('pdf-parse');
-      const result = await pdfParse(file.buffer);
-      return result.text;
+      const parser = new PDFParse({ data: file.buffer });
+
+      try {
+        const result = await parser.getText();
+        return result.text;
+      } finally {
+        await parser.destroy();
+      }
     }
 
     if (
       mimeType ===
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const mammoth = require('mammoth');
       const result = await mammoth.extractRawText({ buffer: file.buffer });
       return result.value;
     }

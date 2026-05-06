@@ -8,9 +8,10 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react'
-import { useAuth } from '@/features/auth/auth-context'
+import { useAuth } from '@/features/auth/use-auth'
 import { Button, Avatar, AvatarFallback } from '@/components/ui'
 import { getInitials } from '@/utils/format'
+import { useI18n } from '@/i18n'
 
 const navItems = [
   {
@@ -41,6 +42,7 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const { user, logout } = useAuth()
+  const { t } = useI18n()
 
   const handleNavClick = () => {
     onNavigate?.()
@@ -72,7 +74,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             }
           >
             <item.icon className="h-5 w-5" />
-            {item.title}
+            {item.href === '/dashboard' && t('nav.dashboard')}
+            {item.href === '/tasks' && t('nav.tasks')}
+            {item.href === '/knowledge-base' && t('nav.knowledge')}
+            {item.href === '/chat' && t('nav.chat')}
           </NavLink>
         ))}
       </nav>
@@ -93,7 +98,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" className="flex-1 justify-start">
             <Settings className="mr-2 h-4 w-4" />
-            Settings
+            {t('common.settings')}
           </Button>
           <Button
             variant="ghost"
@@ -102,7 +107,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             className="flex-1 justify-start text-destructive hover:text-destructive"
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Logout
+            {t('common.logout')}
           </Button>
         </div>
       </div>

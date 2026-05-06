@@ -7,6 +7,7 @@ import {
   Eye,
   CheckCircle
 } from 'lucide-react'
+import { useI18n } from '@/i18n'
 
 interface TaskStatusBadgeProps {
   status: TaskStatus
@@ -27,6 +28,7 @@ export function TaskStatusBadge({
   showIcon = true,
   size = 'md'
 }: TaskStatusBadgeProps) {
+  const { t } = useI18n()
   const config = TASK_STATUS_CONFIG[status]
   const Icon = statusIcons[status]
 
@@ -46,7 +48,13 @@ export function TaskStatusBadge({
           }`}
         />
       )}
-      {config.label}
+      {{
+        'To Do': t('tasks.todo'),
+        'In Progress': t('tasks.inProgress'),
+        Blocked: t('tasks.blocked'),
+        Review: t('tasks.review'),
+        Done: t('tasks.done'),
+      }[config.label] || config.label}
     </Badge>
   )
 }

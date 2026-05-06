@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
@@ -12,7 +20,10 @@ export class PrdTrackerController {
   constructor(private readonly prdTrackerService: PrdTrackerService) {}
 
   @Post()
-  create(@Body() createPrdTaskDto: CreatePrdTaskDto, @CurrentUser() user: AuthenticatedUser) {
+  create(
+    @Body() createPrdTaskDto: CreatePrdTaskDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.prdTrackerService.create(createPrdTaskDto, user.tenantId);
   }
 
@@ -27,6 +38,10 @@ export class PrdTrackerController {
     @Body() updatePrdTaskDto: UpdatePrdTaskDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.prdTrackerService.updateStatus(id, updatePrdTaskDto, user.tenantId);
+    return this.prdTrackerService.updateStatus(
+      id,
+      updatePrdTaskDto,
+      user.tenantId,
+    );
   }
 }

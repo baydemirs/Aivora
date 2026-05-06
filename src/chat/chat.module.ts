@@ -10,4 +10,4 @@ import { ChatService } from './chat.service';
   providers: [ChatService],
   exports: [ChatService],
 })
-export class ChatModule { }
+export class ChatModule {}

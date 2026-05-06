@@ -3,17 +3,18 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { Sheet, SheetContent } from '@/components/ui'
-
-const pageTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/tasks': 'PRD Tracker',
-  '/knowledge-base': 'Knowledge Base',
-  '/chat': 'AI Chat',
-}
+import { useI18n } from '@/i18n'
 
 export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+  const { t } = useI18n()
+  const pageTitles: Record<string, string> = {
+    '/dashboard': t('nav.dashboard'),
+    '/tasks': t('nav.tasks'),
+    '/knowledge-base': t('nav.knowledge'),
+    '/chat': t('layout.aiChat'),
+  }
   const title = pageTitles[location.pathname] || ''
 
   return (

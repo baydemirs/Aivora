@@ -16,8 +16,10 @@ import {
   DocumentDetailDrawer,
   DeleteDocumentDialog
 } from '@/features/documents/components'
+import { useI18n } from '@/i18n'
 
 export function KnowledgeBasePage() {
+  const { t } = useI18n()
   // State
   const [filters, setFilters] = useState<IDocumentFilters>({
     searchQuery: '',
@@ -95,9 +97,9 @@ export function KnowledgeBasePage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Knowledge Base</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('kb.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your organization's documents and RAG vector embeddings
+            {t('kb.subtitle')}
           </p>
         </div>
         
@@ -105,9 +107,9 @@ export function KnowledgeBasePage() {
         {statsData && (
           <div className="bg-muted px-4 py-2 rounded-lg text-sm flex items-center gap-2">
             <span className="font-semibold">{statsData.byStatus.ready}</span>
-             <span className="text-muted-foreground">ready of</span>
+             <span className="text-muted-foreground">{t('kb.readyOf')}</span>
             <span className="font-semibold">{statsData.total}</span>
-            <span className="text-muted-foreground">documents</span>
+            <span className="text-muted-foreground">{t('kb.documents')}</span>
           </div>
         )}
       </div>
@@ -123,9 +125,9 @@ export function KnowledgeBasePage() {
         <CardHeader className="pb-4">
            <div className="flex flex-col space-y-4">
             <div>
-              <CardTitle>Documents</CardTitle>
+              <CardTitle>{t('kb.documentsTitle')}</CardTitle>
               <CardDescription>
-                Browse and manage uploaded files and their embedding status
+                {t('kb.documentsDesc')}
               </CardDescription>
             </div>
             
@@ -142,12 +144,12 @@ export function KnowledgeBasePage() {
                <div className="h-12 w-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
                  <FileText className="h-6 w-6" />
                </div>
-               <p className="text-lg font-medium">Failed to load documents</p>
+               <p className="text-lg font-medium">{t('kb.failed')}</p>
                <p className="text-muted-foreground max-w-sm mt-1 mb-4">
-                 There was an error communicating with the server. Please check your connection and try again.
+                 {t('kb.failedDesc')}
                </p>
                <Button variant="outline" onClick={() => window.location.reload()}>
-                 Retry
+                 {t('common.retry')}
                </Button>
             </div>
           ) : !isListLoading && listData?.documents.length === 0 ? (
@@ -155,11 +157,11 @@ export function KnowledgeBasePage() {
               <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
                 <FileText className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-lg font-medium text-foreground">No documents found</p>
+              <p className="text-lg font-medium text-foreground">{t('kb.empty')}</p>
               <p className="text-muted-foreground max-w-sm mt-1">
                 {filters.searchQuery || filters.status !== 'all' || filters.fileType !== 'all'
-                  ? "We couldn't find any documents matching your current filters. Try adjusting your search criteria."
-                  : "You haven't uploaded any documents yet. Drag and drop a file above to get started."}
+                  ? t('kb.emptyWithFilter')
+                  : t('kb.emptyWithoutFilter')}
               </p>
               {(filters.searchQuery || filters.status !== 'all' || filters.fileType !== 'all') && (
                 <Button 
@@ -173,7 +175,7 @@ export function KnowledgeBasePage() {
                     sortOrder: 'desc'
                   })}
                 >
-                  Clear Filters
+                  {t('common.clearFilters')}
                 </Button>
               )}
             </div>

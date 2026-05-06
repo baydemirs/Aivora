@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Card, Button, Sheet, SheetContent } from '@/components/ui'
 import { Menu } from 'lucide-react'
 import {
@@ -32,8 +32,14 @@ export function ChatPage() {
   const createConversationMutation = useCreateConversation()
   const deleteConversationMutation = useDeleteConversation()
 
-  const conversations = conversationsData?.conversations || []
-  const activeConversation = conversations.find((c) => c.id === activeConversationId) || null
+  const conversations = useMemo(
+    () => conversationsData?.conversations ?? [],
+    [conversationsData?.conversations],
+  )
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.id === activeConversationId) ?? null,
+    [activeConversationId, conversations],
+  )
 
   // Handlers
   const handleSelectConversation = useCallback(
