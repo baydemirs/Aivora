@@ -1,5 +1,3 @@
-import { logDevError } from '@/lib/logger'
-
 const TOKEN_KEY = 'aivora_token'
 const USER_KEY = 'aivora_user'
 
@@ -15,8 +13,8 @@ export const storage = {
   setToken: (token: string): void => {
     try {
       localStorage.setItem(TOKEN_KEY, token)
-    } catch (error) {
-      logDevError('Failed to save token to localStorage.', error)
+    } catch (e) {
+      console.error('Failed to save token to localStorage:', e)
     }
   },
 
@@ -24,7 +22,7 @@ export const storage = {
     try {
       localStorage.removeItem(TOKEN_KEY)
     } catch {
-      // noop
+      // silently ignore
     }
   },
 
@@ -32,20 +30,17 @@ export const storage = {
     try {
       const raw = localStorage.getItem(USER_KEY)
       if (!raw || raw === 'undefined' || raw === 'null') return null
-
       const parsed = JSON.parse(raw)
+      // Basic shape validation: must be an object with an id
       if (parsed && typeof parsed === 'object' && 'id' in parsed) {
         return parsed as T
       }
-
+      // Invalid shape — clean up
       localStorage.removeItem(USER_KEY)
       return null
     } catch {
-      try {
-        localStorage.removeItem(USER_KEY)
-      } catch {
-        // noop
-      }
+      // Corrupted JSON — clean up
+      try { localStorage.removeItem(USER_KEY) } catch { /* noop */ }
       return null
     }
   },
@@ -53,8 +48,8 @@ export const storage = {
   setUser: <T>(user: T): void => {
     try {
       localStorage.setItem(USER_KEY, JSON.stringify(user))
-    } catch (error) {
-      logDevError('Failed to save user to localStorage.', error)
+    } catch (e) {
+      console.error('Failed to save user to localStorage:', e)
     }
   },
 
@@ -62,7 +57,7 @@ export const storage = {
     try {
       localStorage.removeItem(USER_KEY)
     } catch {
-      // noop
+      // silently ignore
     }
   },
 
@@ -71,7 +66,7 @@ export const storage = {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(USER_KEY)
     } catch {
-      // noop
+      // silently ignore
     }
   },
 }

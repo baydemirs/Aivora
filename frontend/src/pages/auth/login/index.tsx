@@ -1,10 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Input, Label } from '@/components/ui'
+import { Button, Input, Label } from '@/components/ui'
 import { useAuth } from '@/features/auth/use-auth'
 import { authService } from '@/services/auth/auth.service'
 import { validators, validateForm } from '@/utils/validation'
-import { toPublicErrorMessage } from '@/lib/errors'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 type LoginFormData = {
@@ -31,7 +30,6 @@ export function LoginPage() {
   const handleChange = (field: keyof LoginFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
     }
@@ -40,10 +38,8 @@ export function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (isLoading) return
     setApiError('')
 
-    // Validate form
     const validationErrors = validateForm(formData, validationSchema)
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
@@ -60,110 +56,111 @@ export function LoginPage() {
       login(response.accessToken, response.user)
       navigate('/dashboard')
     } catch (err) {
-      setApiError(toPublicErrorMessage(err, 'Sign-in failed. Please try again.'))
+      if (err instanceof Error) {
+        setApiError(err.message || 'Invalid email or password')
+      } else {
+        setApiError('An error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-        <CardDescription>
+    <div className="w-full max-w-[400px] animate-fade-in">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Enter your credentials to access your account
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          {apiError && (
-            <div className="flex items-start gap-3 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-              <span>{apiError}</span>
-            </div>
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {apiError && (
+          <div className="flex items-start gap-3 rounded-lg bg-destructive/10 p-3.5 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <span>{apiError}</span>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="name@example.com"
+            value={formData.email}
+            onChange={handleChange('email')}
+            disabled={isLoading}
+            autoComplete="email"
+            className={errors.email ? 'border-destructive focus-visible:ring-destructive/30' : ''}
+          />
+          {errors.email && (
+            <p className="text-xs text-destructive">{errors.email}</p>
           )}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={formData.email}
-              onChange={handleChange('email')}
-              disabled={isLoading}
-              autoComplete="email"
-              className={errors.email ? 'border-destructive' : ''}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange('password')}
-              disabled={isLoading}
-              autoComplete="current-password"
-              className={errors.password ? 'border-destructive' : ''}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password}</p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="remember"
-                className="h-4 w-4 rounded border-input"
-              />
-              <label htmlFor="remember" className="cursor-pointer text-muted-foreground">
-                Remember me
-              </label>
-            </div>
             <button
               type="button"
-              className="text-primary hover:underline"
-              onClick={() => setApiError('Password reset is currently unavailable. Please contact your administrator.')}
+              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+              onClick={() => alert('Password reset not implemented yet')}
             >
               Forgot password?
             </button>
           </div>
-        </CardContent>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            value={formData.password}
+            onChange={handleChange('password')}
+            disabled={isLoading}
+            autoComplete="current-password"
+            className={errors.password ? 'border-destructive focus-visible:ring-destructive/30' : ''}
+          />
+          {errors.password && (
+            <p className="text-xs text-destructive">{errors.password}</p>
+          )}
+        </div>
 
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              'Sign in'
-            )}
-          </Button>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="remember"
+            className="h-4 w-4 rounded border-input accent-primary"
+          />
+          <label htmlFor="remember" className="cursor-pointer text-sm text-muted-foreground">
+            Remember me
+          </label>
+        </div>
 
-          <div className="text-center text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-primary hover:underline">
-              Sign up
-            </Link>
-          </div>
+        <Button type="submit" className="w-full h-10" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            'Sign in'
+          )}
+        </Button>
 
-          <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-            <p className="font-medium">Demo credentials:</p>
-            <p className="mt-1">Email: demo@aivora.com</p>
-            <p>Password: demo123</p>
-          </div>
-        </CardFooter>
+        <p className="text-center text-sm text-muted-foreground">
+          Don't have an account?{' '}
+          <Link to="/register" className="font-medium text-primary hover:text-primary/80 transition-colors">
+            Sign up
+          </Link>
+        </p>
+
+        <div className="rounded-lg bg-muted/60 border border-border/60 p-3 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Demo credentials</p>
+          <p className="mt-1">Email: demo@aivora.com</p>
+          <p>Password: demo123</p>
+        </div>
       </form>
-    </Card>
+    </div>
   )
 }

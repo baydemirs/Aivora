@@ -1,12 +1,8 @@
-import apiClient from '@/services/api/client'
-import { env } from '@/config/env'
-import { getCurrentTenantId, isTenantScopedRecord } from '@/utils/tenant'
-import { AppError, toAppError } from '@/lib/errors'
 import {
   TaskStatus,
   TaskPriority,
   TaskModule,
-  TaskSortBy,
+  TaskSortBy
 } from '../types'
 import type {
   Task,
@@ -14,330 +10,381 @@ import type {
   UpdateTaskRequest,
   GetTasksQuery,
   GetTasksResponse,
-  TaskStats,
+  TaskStats
 } from '../types'
 
-interface BackendPrdTask {
-  id: string
-  title: string
-  module: string
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
-  tenantId: string
-  createdAt: string
-  updatedAt: string
+// Mock data
+const MOCK_TASKS: Task[] = [
+  {
+    id: '1',
+    title: 'Implement JWT Authentication',
+    description: 'Set up JWT authentication with refresh tokens, middleware validation, and secure cookie handling.',
+    status: TaskStatus.DONE,
+    priority: TaskPriority.HIGH,
+    module: TaskModule.AUTH,
+    assigneeId: 'user1',
+    assigneeName: 'Alex Morgan',
+    estimatedHours: 8,
+    actualHours: 10,
+    tags: ['jwt', 'security', 'backend'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: '2024-01-18T14:30:00Z',
+    completedAt: '2024-01-18T14:30:00Z',
+    metadata: { complexity: 'medium', epic: 'user-management' }
+  },
+  {
+    id: '2',
+    title: 'Setup RAG Pipeline with Vector Database',
+    description: 'Implement document embedding pipeline using OpenAI embeddings and Pinecone vector database for semantic search.',
+    status: TaskStatus.DONE,
+    priority: TaskPriority.URGENT,
+    module: TaskModule.RAG,
+    assigneeId: 'user2',
+    assigneeName: 'Sarah Chen',
+    estimatedHours: 16,
+    actualHours: 20,
+    tags: ['rag', 'embeddings', 'vector-db', 'ai'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-17T09:00:00Z',
+    updatedAt: '2024-01-25T11:00:00Z',
+    completedAt: '2024-01-25T11:00:00Z',
+    metadata: { complexity: 'high', epic: 'knowledge-system' }
+  },
+  {
+    id: '3',
+    title: 'Integrate OpenAI Chat Completion API',
+    description: 'Set up streaming chat completion with context management, conversation history, and error handling.',
+    status: TaskStatus.IN_PROGRESS,
+    priority: TaskPriority.HIGH,
+    module: TaskModule.CHAT,
+    assigneeId: 'user1',
+    assigneeName: 'Alex Morgan',
+    estimatedHours: 12,
+    actualHours: 8,
+    tags: ['openai', 'chat', 'streaming', 'api'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-19T08:00:00Z',
+    updatedAt: '2024-01-26T16:45:00Z',
+    metadata: { complexity: 'medium', epic: 'chat-system' }
+  },
+  {
+    id: '4',
+    title: 'Create Document Upload & Processing',
+    description: 'Build file upload system with PDF/DOCX parsing, chunking strategy, and metadata extraction.',
+    status: TaskStatus.REVIEW,
+    priority: TaskPriority.MEDIUM,
+    module: TaskModule.KNOWLEDGE_BASE,
+    assigneeId: 'user3',
+    assigneeName: 'Mike Johnson',
+    estimatedHours: 10,
+    actualHours: 12,
+    tags: ['upload', 'pdf', 'parsing', 'chunking'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-20T10:00:00Z',
+    updatedAt: '2024-01-27T09:30:00Z',
+    metadata: { complexity: 'medium', epic: 'knowledge-system' }
+  },
+  {
+    id: '5',
+    title: 'Add Conversation History Management',
+    description: 'Implement conversation persistence, search, and organization features with pagination.',
+    status: TaskStatus.TODO,
+    priority: TaskPriority.MEDIUM,
+    module: TaskModule.CHAT,
+    assigneeId: 'user2',
+    assigneeName: 'Sarah Chen',
+    estimatedHours: 6,
+    tags: ['history', 'persistence', 'search'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-21T09:00:00Z',
+    updatedAt: '2024-01-21T09:00:00Z',
+    metadata: { complexity: 'low', epic: 'chat-system' }
+  },
+  {
+    id: '6',
+    title: 'Dashboard Analytics Implementation',
+    description: 'Build comprehensive analytics dashboard with charts, KPIs, and real-time updates.',
+    status: TaskStatus.BLOCKED,
+    priority: TaskPriority.LOW,
+    module: TaskModule.DASHBOARD,
+    assigneeId: 'user3',
+    assigneeName: 'Mike Johnson',
+    estimatedHours: 20,
+    actualHours: 5,
+    tags: ['analytics', 'charts', 'dashboard', 'real-time'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-22T11:00:00Z',
+    updatedAt: '2024-01-28T14:00:00Z',
+    metadata: {
+      complexity: 'high',
+      epic: 'analytics',
+      blockingReason: 'Waiting for analytics service API specs'
+    }
+  },
+  {
+    id: '7',
+    title: 'API Rate Limiting & Security',
+    description: 'Implement rate limiting, request validation, and security headers for all API endpoints.',
+    status: TaskStatus.TODO,
+    priority: TaskPriority.HIGH,
+    module: TaskModule.API,
+    estimatedHours: 8,
+    tags: ['security', 'rate-limiting', 'validation'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-23T14:00:00Z',
+    updatedAt: '2024-01-23T14:00:00Z',
+    metadata: { complexity: 'medium', epic: 'security' }
+  },
+  {
+    id: '8',
+    title: 'Docker Containerization & CI/CD',
+    description: 'Set up Docker containers, GitHub Actions workflows, and deployment automation.',
+    status: TaskStatus.IN_PROGRESS,
+    priority: TaskPriority.MEDIUM,
+    module: TaskModule.INFRASTRUCTURE,
+    assigneeId: 'user1',
+    assigneeName: 'Alex Morgan',
+    estimatedHours: 12,
+    actualHours: 6,
+    tags: ['docker', 'ci-cd', 'deployment', 'automation'],
+    tenantId: 'tenant1',
+    createdAt: '2024-01-24T10:00:00Z',
+    updatedAt: '2024-01-29T12:00:00Z',
+    metadata: { complexity: 'medium', epic: 'infrastructure' }
+  }
+]
+
+type SortableTaskValue = string | number | undefined
+
+const priorityWeights: Record<TaskPriority, number> = {
+  [TaskPriority.LOW]: 1,
+  [TaskPriority.MEDIUM]: 2,
+  [TaskPriority.HIGH]: 3,
+  [TaskPriority.URGENT]: 4,
 }
 
-const toUiModule = (module: string): string => {
-  const value = module?.trim().toLowerCase()
-  if (!value) return TaskModule.API
-  if (Object.values(TaskModule).includes(value as (typeof TaskModule)[keyof typeof TaskModule])) {
+function getSortableTaskValue(task: Task, sortBy: TaskSortBy): SortableTaskValue {
+  if (sortBy === TaskSortBy.PRIORITY) {
+    return priorityWeights[task.priority]
+  }
+
+  const value = task[sortBy]
+
+  if (typeof value === 'string') {
+    return value.toLowerCase()
+  }
+
+  if (typeof value === 'number') {
     return value
   }
-  return value
+
+  return undefined
 }
 
-const toUiStatus = (status: BackendPrdTask['status']): Task['status'] => {
-  if (status === 'IN_PROGRESS') return TaskStatus.IN_PROGRESS
-  if (status === 'COMPLETED') return TaskStatus.DONE
-  return TaskStatus.TODO
+function compareSortableValues(a: SortableTaskValue, b: SortableTaskValue): number {
+  if (a === b) return 0
+  if (a === undefined) return 1
+  if (b === undefined) return -1
+  return a > b ? 1 : -1
 }
 
-const toBackendStatus = (status: Task['status']): BackendPrdTask['status'] => {
-  if (status === TaskStatus.DONE) return 'COMPLETED'
-  if (status === TaskStatus.IN_PROGRESS || status === TaskStatus.BLOCKED || status === TaskStatus.REVIEW) {
-    return 'IN_PROGRESS'
-  }
-  return 'PENDING'
-}
+class MockTaskService {
+  private tasks: Task[] = [...MOCK_TASKS]
+  private delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-const mapBackendTask = (task: BackendPrdTask): Task => ({
-  id: task.id,
-  title: task.title,
-  description: '',
-  status: toUiStatus(task.status),
-  priority: TaskPriority.MEDIUM,
-  module: toUiModule(task.module),
-  assigneeId: undefined,
-  assigneeName: undefined,
-  estimatedHours: undefined,
-  actualHours: undefined,
-  tags: [],
-  tenantId: task.tenantId,
-  createdAt: task.createdAt,
-  updatedAt: task.updatedAt,
-  completedAt: task.status === 'COMPLETED' ? task.updatedAt : undefined,
-  metadata: {},
-})
-
-const priorityWeights: Record<Task['priority'], number> = {
-  low: 1,
-  medium: 2,
-  high: 3,
-  urgent: 4,
-}
-
-const sortTasks = (tasks: Task[], sortBy: TaskSortBy, sortOrder: 'asc' | 'desc') => {
-  return [...tasks].sort((a, b) => {
-    let aVal: string | number = a[sortBy as keyof Task] as string
-    let bVal: string | number = b[sortBy as keyof Task] as string
-
-    if (sortBy === TaskSortBy.PRIORITY) {
-      aVal = priorityWeights[a.priority]
-      bVal = priorityWeights[b.priority]
-    }
-
-    if (typeof aVal === 'string') aVal = aVal.toLowerCase()
-    if (typeof bVal === 'string') bVal = bVal.toLowerCase()
-
-    if (sortOrder === 'asc') return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-    return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
-  })
-}
-
-const applyClientFilters = (tasks: Task[], query: GetTasksQuery): Task[] => {
-  const {
-    search = '',
-    status,
-    priority,
-    module,
-    assignee,
-    sortBy = TaskSortBy.UPDATED_AT,
-    sortOrder = 'desc',
-  } = query
-
-  let filtered = [...tasks]
-
-  if (search) {
-    const searchLower = search.toLowerCase()
-    filtered = filtered.filter((task) =>
-      task.title.toLowerCase().includes(searchLower) ||
-      task.description?.toLowerCase().includes(searchLower) ||
-      task.tags?.some((tag) => tag.toLowerCase().includes(searchLower)),
-    )
-  }
-
-  if (status) filtered = filtered.filter((task) => task.status === status)
-  if (priority) filtered = filtered.filter((task) => task.priority === priority)
-  if (module) filtered = filtered.filter((task) => task.module === module)
-  if (assignee) filtered = filtered.filter((task) => task.assigneeId === assignee)
-
-  return sortTasks(filtered, sortBy, sortOrder)
-}
-
-const paginate = (tasks: Task[], page: number, limit: number): GetTasksResponse => {
-  const totalCount = tasks.length
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit))
-  const startIndex = (page - 1) * limit
-  const paginatedTasks = tasks.slice(startIndex, startIndex + limit)
-
-  return {
-    tasks: paginatedTasks,
-    totalCount,
-    totalPages,
-    currentPage: page,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
-  }
-}
-
-class RealTaskService {
   async getTasks(query: GetTasksQuery = {}): Promise<GetTasksResponse> {
-    const page = query.page || 1
-    const limit = query.limit || 50
+    await this.delay(300) // Simulate API delay
 
-    // Backend currently exposes list endpoint without rich filtering contract.
-    // We still pass filter params to keep the request shape ready for server-side support.
-    let response
-    try {
-      response = await apiClient.get<BackendPrdTask[]>('/prd', {
-        params: {
-          search: query.search,
-          status: query.status ? toBackendStatus(query.status) : undefined,
-          priority: query.priority,
-          module: query.module,
-          assignee: query.assignee,
-          sortBy: query.sortBy,
-          sortOrder: query.sortOrder,
-          page,
-          limit,
-        },
-      })
-    } catch (error) {
-      throw toAppError(error, 'Failed to fetch tasks')
+    const {
+      page = 1,
+      limit = 50,
+      search = '',
+      status,
+      priority,
+      module,
+      assignee,
+      sortBy = TaskSortBy.UPDATED_AT,
+      sortOrder = 'desc'
+    } = query
+
+    let filteredTasks = [...this.tasks]
+
+    // Search filter
+    if (search) {
+      const searchLower = search.toLowerCase()
+      filteredTasks = filteredTasks.filter(task =>
+        task.title.toLowerCase().includes(searchLower) ||
+        task.description?.toLowerCase().includes(searchLower) ||
+        task.tags?.some(tag => tag.toLowerCase().includes(searchLower))
+      )
     }
 
-    const tenantId = getCurrentTenantId()
-    const scoped = response.data.filter((task) => isTenantScopedRecord(task.tenantId, tenantId))
-    const mapped = scoped.map(mapBackendTask)
-    const filtered = applyClientFilters(mapped, query)
-    return paginate(filtered, page, limit)
+    // Status filter
+    if (status) {
+      filteredTasks = filteredTasks.filter(task => task.status === status)
+    }
+
+    // Priority filter
+    if (priority) {
+      filteredTasks = filteredTasks.filter(task => task.priority === priority)
+    }
+
+    // Module filter
+    if (module) {
+      filteredTasks = filteredTasks.filter(task => task.module === module)
+    }
+
+    // Assignee filter
+    if (assignee) {
+      filteredTasks = filteredTasks.filter(task => task.assigneeId === assignee)
+    }
+
+    // Sorting
+    filteredTasks.sort((a, b) => {
+      const comparison = compareSortableValues(
+        getSortableTaskValue(a, sortBy),
+        getSortableTaskValue(b, sortBy),
+      )
+
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    // Pagination
+    const totalCount = filteredTasks.length
+    const totalPages = Math.ceil(totalCount / limit)
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    const paginatedTasks = filteredTasks.slice(startIndex, endIndex)
+
+    return {
+      tasks: paginatedTasks,
+      totalCount,
+      totalPages,
+      currentPage: page,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    }
   }
 
   async getTaskById(id: string): Promise<Task | null> {
-    const tenantId = getCurrentTenantId()
-    let response
-    try {
-      response = await apiClient.get<BackendPrdTask[]>('/prd')
-    } catch (error) {
-      throw toAppError(error, 'Failed to fetch task detail')
-    }
-    const found = response.data.find(
-      (task) => task.id === id && isTenantScopedRecord(task.tenantId, tenantId),
-    )
-    return found ? mapBackendTask(found) : null
+    await this.delay(200)
+    return this.tasks.find(task => task.id === id) || null
   }
 
   async createTask(data: CreateTaskRequest): Promise<Task> {
-    let response
-    try {
-      response = await apiClient.post<BackendPrdTask>('/prd', {
-        title: data.title,
-        module: data.module,
-      })
-    } catch (error) {
-      throw toAppError(error, 'Failed to create task')
+    await this.delay(500)
+
+    const newTask: Task = {
+      id: `task-${Date.now()}`,
+      ...data,
+      status: TaskStatus.TODO,
+      tenantId: 'tenant1', // Would come from auth context in real app
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }
-    const tenantId = getCurrentTenantId()
-    if (!isTenantScopedRecord(response.data.tenantId, tenantId)) {
-      throw new AppError('tenant', 'Task creation response is not tenant-scoped')
-    }
-    return mapBackendTask(response.data)
+
+    this.tasks.unshift(newTask)
+    return newTask
   }
 
   async updateTask(id: string, data: UpdateTaskRequest): Promise<Task> {
-    let response
-    try {
-      response = await apiClient.patch<BackendPrdTask>(`/prd/${id}`, {
-        status: data.status ? toBackendStatus(data.status) : undefined,
-      })
-    } catch (error) {
-      throw toAppError(error, 'Failed to update task')
+    await this.delay(400)
+
+    const taskIndex = this.tasks.findIndex(task => task.id === id)
+    if (taskIndex === -1) {
+      throw new Error('Task not found')
     }
-    const tenantId = getCurrentTenantId()
-    if (!isTenantScopedRecord(response.data.tenantId, tenantId)) {
-      throw new AppError('tenant', 'Task update response is not tenant-scoped')
+
+    const updatedTask: Task = {
+      ...this.tasks[taskIndex],
+      ...data,
+      updatedAt: new Date().toISOString(),
+      ...(data.status === TaskStatus.DONE && !this.tasks[taskIndex].completedAt
+        ? { completedAt: new Date().toISOString() }
+        : {}),
+      ...(data.status !== TaskStatus.DONE
+        ? { completedAt: undefined }
+        : {})
     }
-    return mapBackendTask(response.data)
+
+    this.tasks[taskIndex] = updatedTask
+    return updatedTask
   }
 
   async deleteTask(id: string): Promise<void> {
-    void id
-    throw new AppError('unsupported', 'Delete task is not supported by backend yet')
+    await this.delay(300)
+
+    const taskIndex = this.tasks.findIndex(task => task.id === id)
+    if (taskIndex === -1) {
+      throw new Error('Task not found')
+    }
+
+    this.tasks.splice(taskIndex, 1)
   }
 
   async getTaskStats(): Promise<TaskStats> {
-    const tasks = (await this.getTasks({ page: 1, limit: 1000 })).tasks
-    return {
-      total: tasks.length,
-      todo: tasks.filter((t) => t.status === TaskStatus.TODO).length,
-      inProgress: tasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
-      blocked: tasks.filter((t) => t.status === TaskStatus.BLOCKED).length,
-      review: tasks.filter((t) => t.status === TaskStatus.REVIEW).length,
-      done: tasks.filter((t) => t.status === TaskStatus.DONE).length,
+    await this.delay(200)
+
+    const stats: TaskStats = {
+      total: this.tasks.length,
+      todo: this.tasks.filter(t => t.status === TaskStatus.TODO).length,
+      inProgress: this.tasks.filter(t => t.status === TaskStatus.IN_PROGRESS).length,
+      blocked: this.tasks.filter(t => t.status === TaskStatus.BLOCKED).length,
+      review: this.tasks.filter(t => t.status === TaskStatus.REVIEW).length,
+      done: this.tasks.filter(t => t.status === TaskStatus.DONE).length,
       byPriority: {
-        low: tasks.filter((t) => t.priority === TaskPriority.LOW).length,
-        medium: tasks.filter((t) => t.priority === TaskPriority.MEDIUM).length,
-        high: tasks.filter((t) => t.priority === TaskPriority.HIGH).length,
-        urgent: tasks.filter((t) => t.priority === TaskPriority.URGENT).length,
+        low: this.tasks.filter(t => t.priority === TaskPriority.LOW).length,
+        medium: this.tasks.filter(t => t.priority === TaskPriority.MEDIUM).length,
+        high: this.tasks.filter(t => t.priority === TaskPriority.HIGH).length,
+        urgent: this.tasks.filter(t => t.priority === TaskPriority.URGENT).length,
       },
-      byModule: tasks.reduce<Record<string, number>>((acc, task) => {
-        acc[task.module] = (acc[task.module] || 0) + 1
-        return acc
-      }, {}),
+      byModule: {}
     }
+
+    // Calculate module stats dynamically
+    this.tasks.forEach(task => {
+      stats.byModule[task.module] = (stats.byModule[task.module] || 0) + 1
+    })
+
+    return stats
   }
 
+  // Utility method to reset mock data (useful for testing)
+  resetData(): void {
+    this.tasks = [...MOCK_TASKS]
+  }
+
+  // Batch operations
   async bulkUpdateStatus(taskIds: string[], status: TaskStatus): Promise<Task[]> {
-    const updates = taskIds.map((id) => this.updateTask(id, { status }))
-    const settled = await Promise.allSettled(updates)
-    return settled
-      .filter((result): result is PromiseFulfilledResult<Task> => result.status === 'fulfilled')
-      .map((result) => result.value)
+    await this.delay(600)
+
+    const updatedTasks: Task[] = []
+
+    for (const id of taskIds) {
+      try {
+        const updatedTask = await this.updateTask(id, { status })
+        updatedTasks.push(updatedTask)
+      } catch (error) {
+        // Skip tasks that don't exist
+        console.warn(`Failed to update task ${id}:`, error)
+      }
+    }
+
+    return updatedTasks
   }
 }
 
-class MockTaskService extends RealTaskService {
-  private memoryTasks: Task[] = []
+// Singleton instance
+export const taskService = new MockTaskService()
 
-  private async ensureSeeded() {
-    if (this.memoryTasks.length > 0) return
-    this.memoryTasks = [
-      {
-        id: 'mock-1',
-        title: 'Implement JWT Authentication',
-        description: 'Set up JWT authentication with refresh tokens.',
-        status: TaskStatus.DONE,
-        priority: TaskPriority.HIGH,
-        module: TaskModule.AUTH,
-        assigneeId: 'user-1',
-        assigneeName: 'Alex Morgan',
-        estimatedHours: 8,
-        actualHours: 10,
-        tags: ['jwt'],
-        tenantId: 'tenant-1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        completedAt: new Date().toISOString(),
-        metadata: {},
-      },
-    ]
-  }
-
-  async getTasks(query: GetTasksQuery = {}): Promise<GetTasksResponse> {
-    await this.ensureSeeded()
-    const page = query.page || 1
-    const limit = query.limit || 50
-    const filtered = applyClientFilters(this.memoryTasks, query)
-    return paginate(filtered, page, limit)
-  }
-
-  async getTaskById(id: string): Promise<Task | null> {
-    await this.ensureSeeded()
-    return this.memoryTasks.find((task) => task.id === id) || null
-  }
-
-  async createTask(data: CreateTaskRequest): Promise<Task> {
-    await this.ensureSeeded()
-    const task: Task = {
-      id: `mock-${Date.now()}`,
-      title: data.title,
-      description: data.description,
-      status: TaskStatus.TODO,
-      priority: data.priority,
-      module: data.module,
-      assigneeId: data.assigneeId,
-      assigneeName: undefined,
-      estimatedHours: data.estimatedHours,
-      actualHours: undefined,
-      tags: data.tags || [],
-      tenantId: 'tenant-1',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      metadata: data.metadata || {},
-    }
-    this.memoryTasks.unshift(task)
-    return task
-  }
-
-  async updateTask(id: string, data: UpdateTaskRequest): Promise<Task> {
-    await this.ensureSeeded()
-    const index = this.memoryTasks.findIndex((task) => task.id === id)
-    if (index < 0) throw new Error('Task not found')
-    const updated = {
-      ...this.memoryTasks[index],
-      ...data,
-      updatedAt: new Date().toISOString(),
-    }
-    this.memoryTasks[index] = updated
-    return updated
-  }
-
-  async deleteTask(id: string): Promise<void> {
-    await this.ensureSeeded()
-    this.memoryTasks = this.memoryTasks.filter((task) => task.id !== id)
-  }
-}
-
-export const taskService = env.enableMockApi
-  ? new MockTaskService()
-  : new RealTaskService()
+// Export for use in real API integration later
+export const createTaskService = () => ({
+  getTasks: taskService.getTasks.bind(taskService),
+  getTaskById: taskService.getTaskById.bind(taskService),
+  createTask: taskService.createTask.bind(taskService),
+  updateTask: taskService.updateTask.bind(taskService),
+  deleteTask: taskService.deleteTask.bind(taskService),
+  getTaskStats: taskService.getTaskStats.bind(taskService),
+  bulkUpdateStatus: taskService.bulkUpdateStatus.bind(taskService),
+})

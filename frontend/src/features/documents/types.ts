@@ -43,8 +43,6 @@ export interface KBDocument {
   metadata?: Record<string, unknown>
 }
 
-export type DocumentDetail = KBDocument
-
 // Document Statistics
 export interface DocumentStats {
   total: number
@@ -95,13 +93,6 @@ export interface GetDocumentsResponse {
 export interface UploadDocumentRequest {
   file: File
   tenantName?: string
-}
-
-export interface UploadResponse {
-  documentId: string
-  title: string
-  chunksCount: number
-  totalChunks: number
 }
 
 // Status Configuration

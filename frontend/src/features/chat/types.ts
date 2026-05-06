@@ -61,12 +61,11 @@ export interface GetMessagesQuery {
 }
 
 export interface SendMessageRequest {
-  conversationId?: string
+  conversationId: string
   content: string
 }
 
 export interface SendMessageResponse {
-  conversationId: string
   userMessage: ChatMessage
   assistantMessage: ChatMessage
 }

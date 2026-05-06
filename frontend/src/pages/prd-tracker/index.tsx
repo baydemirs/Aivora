@@ -14,8 +14,6 @@ import {
   useTaskStats,
   useUpdateTask
 } from '@/features/tasks/hooks/useTasks'
-import { toPublicErrorMessage } from '@/lib/errors'
-import { logDevError } from '@/lib/logger'
 import type {
   Task,
   TaskFilters as TaskFiltersType,
@@ -40,7 +38,6 @@ export function PrdTrackerPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false)
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
-  const [actionError, setActionError] = useState('')
 
   // Prepare query parameters for API
   const queryParams = useMemo((): GetTasksQuery => {
@@ -83,13 +80,11 @@ export function PrdTrackerPage() {
   }
 
   const handleStatusChange = async (taskId: string, status: TaskStatus) => {
-    if (updateTaskMutation.isPending) return
     try {
-      setActionError('')
       await updateTaskMutation.mutateAsync({ id: taskId, data: { status } })
     } catch (error) {
-      logDevError('Failed to update task status.', error)
-      setActionError(toPublicErrorMessage(error, 'Failed to update task status.'))
+      console.error('Failed to update task status:', error)
+      // TODO: Show toast notification
     }
   }
 
@@ -133,9 +128,6 @@ export function PrdTrackerPage() {
 
   const isLoading = isTasksLoading || isStatsLoading
   const hasError = tasksError
-  const liveSelectedTask = selectedTask
-    ? tasks.find((task) => task.id === selectedTask.id) || selectedTask
-    : null
 
   const statItems = [
     { label: t('tasks.totalTasks'), value: stats.total, color: 'border-l-primary', onClick: () => setFilters(prev => ({ ...prev, status: 'all' })) },
@@ -251,11 +243,6 @@ export function PrdTrackerPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {actionError && (
-            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {actionError}
-            </div>
-          )}
           {hasError ? (
             <div className="text-center py-12">
               <div className="text-destructive mb-2">{t('tasks.failedToLoad')}</div>
@@ -305,10 +292,10 @@ export function PrdTrackerPage() {
 
       {/* Task Detail Drawer */}
       <TaskDetailDrawer
-        task={liveSelectedTask}
+        task={selectedTask}
         open={isDetailDrawerOpen}
         onClose={handleCloseDrawer}
-        onStatusChange={liveSelectedTask ? (status) => handleStatusChange(liveSelectedTask.id, status) : undefined}
+        onStatusChange={selectedTask ? (status) => handleStatusChange(selectedTask.id, status) : undefined}
         isStatusUpdating={updateTaskMutation.isPending}
         loading={false}
       />
