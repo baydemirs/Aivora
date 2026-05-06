@@ -3,6 +3,7 @@ import { useAuth } from '@/features/auth/use-auth'
 import { useTaskStats } from '@/features/tasks/hooks/useTasks'
 import { ListTodo, FileText, MessageSquare, CheckCircle, Clock, Building2, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useI18n } from '@/i18n'
 
 // Mock data for non-task stats - will be replaced with API calls
 const mockOtherStats = {
@@ -52,6 +53,7 @@ function StatCard({ title, value, description, icon: Icon, loading, to }: StatCa
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const { t } = useI18n()
 
   // Get real task stats from our API
   const {
@@ -69,10 +71,10 @@ export function DashboardPage() {
       {/* Welcome Section */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight">
-          Welcome back{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}!
+          {t('dashboard.welcome')}{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}!
         </h2>
         <p className="text-muted-foreground">
-          Here's an overview of your AI platform activity.
+          {t('dashboard.overview')}
         </p>
       </div>
 
@@ -83,7 +85,7 @@ export function DashboardPage() {
             <Building2 className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-base">{user?.tenantName || 'Your Organization'}</CardTitle>
+            <CardTitle className="text-base">{user?.tenantName || t('dashboard.organization')}</CardTitle>
             <p className="text-sm text-muted-foreground">
               {user?.role === 'ADMIN' ? 'Administrator' : 'Member'} • Tenant ID: {user?.tenantId ? `${user.tenantId.slice(0, 8)}...` : 'N/A'}
             </p>
@@ -94,33 +96,33 @@ export function DashboardPage() {
       {/* Primary Task Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Tasks"
+          title={t('dashboard.totalTasks')}
           value={taskStats?.total || 0}
-          description="All PRD tasks"
+          description={t('dashboard.allPrdTasks')}
           icon={ListTodo}
           loading={isTaskStatsLoading}
           to="/tasks"
         />
         <StatCard
-          title="Active Tasks"
+          title={t('dashboard.activeTasks')}
           value={totalActiveTasks}
-          description="Todo, In Progress, Blocked, Review"
+          description={t('dashboard.activeDesc')}
           icon={Clock}
           loading={isTaskStatsLoading}
           to="/tasks"
         />
         <StatCard
-          title="Completed Tasks"
+          title={t('dashboard.completedTasks')}
           value={taskStats?.done || 0}
-          description="Successfully completed"
+          description={t('dashboard.completedDesc')}
           icon={CheckCircle}
           loading={isTaskStatsLoading}
           to="/tasks"
         />
         <StatCard
-          title="Blocked Tasks"
+          title={t('dashboard.blockedTasks')}
           value={taskStats?.blocked || 0}
-          description="Need attention"
+          description={t('dashboard.blockedDesc')}
           icon={AlertCircle}
           loading={isTaskStatsLoading}
           to="/tasks"
@@ -130,7 +132,7 @@ export function DashboardPage() {
       {/* Task Status Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Task Status Breakdown</CardTitle>
+          <CardTitle className="text-base">{t('dashboard.taskBreakdown')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isTaskStatsLoading ? (
@@ -144,28 +146,28 @@ export function DashboardPage() {
             </div>
           ) : taskStatsError ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Failed to load task statistics
+              {t('dashboard.failedStats')}
             </p>
           ) : (
             <div className="grid gap-4 md:grid-cols-5">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">To Do</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.todo')}</p>
                 <p className="text-2xl font-bold text-gray-600">{taskStats?.todo || 0}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">In Progress</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.inProgress')}</p>
                 <p className="text-2xl font-bold text-blue-600">{taskStats?.inProgress || 0}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Blocked</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.blocked')}</p>
                 <p className="text-2xl font-bold text-red-600">{taskStats?.blocked || 0}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Review</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.review')}</p>
                 <p className="text-2xl font-bold text-yellow-600">{taskStats?.review || 0}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Done</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.done')}</p>
                 <p className="text-2xl font-bold text-green-600">{taskStats?.done || 0}</p>
               </div>
             </div>
@@ -176,16 +178,16 @@ export function DashboardPage() {
       {/* Secondary Stats and Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
-          title="Documents"
+          title={t('dashboard.documents')}
           value={mockOtherStats.totalDocuments}
-          description="In knowledge base"
+          description={t('dashboard.inKnowledgeBase')}
           icon={FileText}
           to="/knowledge-base"
         />
         <StatCard
-          title="AI Conversations"
+          title={t('dashboard.aiConversations')}
           value={mockOtherStats.totalConversations}
-          description="Total chat sessions"
+          description={t('dashboard.totalChatSessions')}
           icon={MessageSquare}
           to="/chat"
         />
@@ -193,7 +195,7 @@ export function DashboardPage() {
         {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Quick Actions</CardTitle>
+            <CardTitle className="text-base">{t('dashboard.quickActions')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Link
@@ -201,21 +203,21 @@ export function DashboardPage() {
               className="flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors hover:bg-muted"
             >
               <ListTodo className="h-4 w-4" />
-              Manage Tasks
+              {t('dashboard.manageTasks')}
             </Link>
             <Link
               to="/knowledge-base"
               className="flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors hover:bg-muted"
             >
               <FileText className="h-4 w-4" />
-              Upload Document
+              {t('dashboard.uploadDocument')}
             </Link>
             <Link
               to="/chat"
               className="flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors hover:bg-muted"
             >
               <MessageSquare className="h-4 w-4" />
-              Start AI Chat
+              {t('dashboard.startChat')}
             </Link>
           </CardContent>
         </Card>
@@ -225,24 +227,24 @@ export function DashboardPage() {
       {taskStats && taskStats.byPriority && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Tasks by Priority</CardTitle>
+            <CardTitle className="text-base">{t('dashboard.tasksByPriority')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Low</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.low')}</p>
                 <p className="text-lg font-semibold text-gray-600">{taskStats.byPriority.low}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Medium</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.medium')}</p>
                 <p className="text-lg font-semibold text-blue-600">{taskStats.byPriority.medium}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">High</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.high')}</p>
                 <p className="text-lg font-semibold text-orange-600">{taskStats.byPriority.high}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Urgent</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('tasks.urgent')}</p>
                 <p className="text-lg font-semibold text-red-600">{taskStats.byPriority.urgent}</p>
               </div>
             </div>
@@ -252,3 +254,4 @@ export function DashboardPage() {
     </div>
   )
 }
+

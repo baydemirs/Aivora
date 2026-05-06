@@ -3,6 +3,7 @@ import { Button, Avatar, AvatarFallback } from '@/components/ui'
 import { useAuth } from '@/features/auth/use-auth'
 import { getInitials } from '@/utils/format'
 import { useState, useRef, useEffect } from 'react'
+import { useI18n } from '@/i18n'
 
 interface TopbarProps {
   onMenuClick: () => void
@@ -11,6 +12,7 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick, title }: TopbarProps) {
   const { user, logout } = useAuth()
+  const { language, setLanguage, t } = useI18n()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -57,6 +59,17 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
       )}
 
       <div className="ml-auto flex items-center gap-2">
+        <div className="hidden items-center gap-2 lg:flex">
+          <span className="text-sm text-muted-foreground">{t('topbar.language')}</span>
+          <select
+            value={language}
+            onChange={(event) => setLanguage(event.target.value as 'en' | 'tr')}
+            className="rounded-md border bg-background px-2 py-1 text-sm"
+          >
+            <option value="en">{t('lang.en')}</option>
+            <option value="tr">{t('lang.tr')}</option>
+          </select>
+        </div>
         {user && (
           <div className="relative" ref={dropdownRef}>
             <button
@@ -96,7 +109,7 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                     className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted"
                   >
                     <User className="h-4 w-4" />
-                    Profile Settings
+                    {t('topbar.profileSettings')}
                   </button>
                   <button
                     onClick={() => {
@@ -106,7 +119,7 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                     className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
                   >
                     <LogOut className="h-4 w-4" />
-                    Sign out
+                    {t('topbar.signOut')}
                   </button>
                 </div>
               </div>
