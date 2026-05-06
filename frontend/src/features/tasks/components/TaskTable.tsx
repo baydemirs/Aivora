@@ -147,6 +147,7 @@ export function TaskTable({
                 <input
                   type="checkbox"
                   className="rounded border-gray-300"
+                  aria-label="Select all tasks"
                   checked={
                     tasks.length > 0 && tasks.every(task => selectedTaskIds.includes(task.id))
                   }
@@ -187,6 +188,7 @@ export function TaskTable({
                     <input
                       type="checkbox"
                       className="rounded border-gray-300"
+                      aria-label={`Select task ${task.title}`}
                       checked={selectedTaskIds.includes(task.id)}
                       onChange={(e) => onTaskSelect(task.id, e.target.checked)}
                     />
@@ -195,11 +197,11 @@ export function TaskTable({
 
                 <TableCell>
                   <div className="space-y-1">
-                    <div className="font-medium text-foreground">
+                    <div className="max-w-[320px] break-words font-medium text-foreground md:max-w-[420px]">
                       {task.title}
                     </div>
                     {task.description && (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="break-words text-sm text-muted-foreground">
                         {hasLongDescription && !isExpanded ? (
                           <>
                             {task.description.slice(0, 100)}...
@@ -320,6 +322,7 @@ export function TaskTable({
                           size="sm"
                           className="h-8 w-8 p-0"
                           onClick={() => onTaskClick(task)}
+                          aria-label={`View task ${task.title}`}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -330,6 +333,7 @@ export function TaskTable({
                           size="sm"
                           className="h-8 w-8 p-0"
                           onClick={() => onTaskEdit(task)}
+                          aria-label={`Edit task ${task.title}`}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -340,6 +344,7 @@ export function TaskTable({
                           size="sm"
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                           onClick={() => onTaskDelete(task)}
+                          aria-label={`Delete task ${task.title}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

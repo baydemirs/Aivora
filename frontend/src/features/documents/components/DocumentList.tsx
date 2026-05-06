@@ -113,7 +113,7 @@ export function DocumentList({
                         <span className={`uppercase font-semibold ${typeConfig?.textColor || 'text-gray-500'}`}>
                           {doc.fileType}
                         </span>
-                        <span>•</span>
+                        <span>|</span>
                         <span>{doc.uploadedBy}</span>
                       </span>
                     </div>
@@ -168,3 +168,4 @@ export function DocumentList({
     </div>
   )
 }
+

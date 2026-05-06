@@ -1,249 +1,196 @@
-import type {
-  KBDocument,
-  GetDocumentsQuery,
-  GetDocumentsResponse,
-  DocumentStats,
+import apiClient from '@/services/api/client'
+import { env } from '@/config/env'
+import axios from 'axios'
+import { AppError, toAppError } from '@/lib/errors'
+import {
+  DocumentFileType,
+  DocumentSortBy,
+  DocumentStatus,
+  EmbeddingStatus,
+  getFileTypeFromExtension,
+  type DocumentStats,
+  type GetDocumentsQuery,
+  type GetDocumentsResponse,
+  type KBDocument,
 } from '../types'
 import {
-  DocumentStatus,
-  DocumentFileType,
-  EmbeddingStatus,
-  DocumentSortBy,
-  getFileTypeFromExtension,
-} from '../types'
+  apiDocumentToDocument,
+  type ApiDocument,
+} from '../mappers/document.mapper'
+import { getCurrentTenantId, getCurrentUser, isTenantScopedRecord } from '@/utils/tenant'
 
-// Mock data
-const MOCK_DOCUMENTS: KBDocument[] = [
-  {
-    id: 'doc-1',
-    name: 'Product Requirements Document.pdf',
-    fileType: DocumentFileType.PDF,
-    size: 2457600, // ~2.3 MB
-    status: DocumentStatus.READY,
-    uploadedAt: '2024-01-15T10:00:00Z',
-    uploadedBy: 'Alex Morgan',
-    tenantName: 'Acme Corp',
-    chunkCount: 24,
-    embeddingStatus: EmbeddingStatus.COMPLETED,
-  },
-  {
-    id: 'doc-2',
-    name: 'Technical Architecture Overview.docx',
-    fileType: DocumentFileType.DOCX,
-    size: 1843200, // ~1.8 MB
-    status: DocumentStatus.READY,
-    uploadedAt: '2024-01-16T14:30:00Z',
-    uploadedBy: 'Sarah Chen',
-    tenantName: 'Acme Corp',
-    chunkCount: 18,
-    embeddingStatus: EmbeddingStatus.COMPLETED,
-  },
-  {
-    id: 'doc-3',
-    name: 'API Documentation v2.pdf',
-    fileType: DocumentFileType.PDF,
-    size: 4096000, // ~3.9 MB
-    status: DocumentStatus.READY,
-    uploadedAt: '2024-01-17T09:00:00Z',
-    uploadedBy: 'Mike Johnson',
-    tenantName: 'Acme Corp',
-    chunkCount: 42,
-    embeddingStatus: EmbeddingStatus.COMPLETED,
-  },
-  {
-    id: 'doc-4',
-    name: 'User Guide.txt',
-    fileType: DocumentFileType.TXT,
-    size: 51200, // ~50 KB
-    status: DocumentStatus.READY,
-    uploadedAt: '2024-01-18T11:00:00Z',
-    uploadedBy: 'Alex Morgan',
-    tenantName: 'Acme Corp',
-    chunkCount: 8,
-    embeddingStatus: EmbeddingStatus.COMPLETED,
-  },
-  {
-    id: 'doc-5',
-    name: 'Financial Report Q4.xlsx',
-    fileType: DocumentFileType.XLSX,
-    size: 3276800, // ~3.1 MB
-    status: DocumentStatus.PROCESSING,
-    uploadedAt: '2024-01-20T16:00:00Z',
-    uploadedBy: 'Sarah Chen',
-    tenantName: 'Acme Corp',
-    chunkCount: 0,
-    embeddingStatus: EmbeddingStatus.IN_PROGRESS,
-  },
-  {
-    id: 'doc-6',
-    name: 'Onboarding Checklist.docx',
-    fileType: DocumentFileType.DOCX,
-    size: 716800, // ~700 KB
-    status: DocumentStatus.ERROR,
-    uploadedAt: '2024-01-21T08:30:00Z',
-    uploadedBy: 'Mike Johnson',
-    tenantName: 'Acme Corp',
-    chunkCount: 0,
-    embeddingStatus: EmbeddingStatus.FAILED,
-    metadata: { errorMessage: 'Failed to parse document structure' },
-  },
-  {
-    id: 'doc-7',
-    name: 'Release Notes v3.1.txt',
-    fileType: DocumentFileType.TXT,
-    size: 28672, // ~28 KB
-    status: DocumentStatus.ARCHIVED,
-    uploadedAt: '2024-01-10T09:00:00Z',
-    uploadedBy: 'Alex Morgan',
-    tenantName: 'Acme Corp',
-    chunkCount: 5,
-    embeddingStatus: EmbeddingStatus.COMPLETED,
-  },
-  {
-    id: 'doc-8',
-    name: 'Sprint Planning Template.xlsx',
-    fileType: DocumentFileType.XLSX,
-    size: 1048576, // ~1 MB
-    status: DocumentStatus.READY,
-    uploadedAt: '2024-01-22T13:15:00Z',
-    uploadedBy: 'Sarah Chen',
-    tenantName: 'Acme Corp',
-    chunkCount: 12,
-    embeddingStatus: EmbeddingStatus.COMPLETED,
-  },
-]
+const buildPagination = (
+  documents: KBDocument[],
+  page: number,
+  limit: number,
+): GetDocumentsResponse => {
+  const totalCount = documents.length
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit))
+  const start = (page - 1) * limit
+  return {
+    documents: documents.slice(start, start + limit),
+    totalCount,
+    totalPages,
+    currentPage: page,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+  }
+}
 
-class MockDocumentService {
-  private documents: KBDocument[] = [...MOCK_DOCUMENTS]
-  private delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sortDocuments = (
+  documents: KBDocument[],
+  sortBy: DocumentSortBy,
+  sortOrder: 'asc' | 'desc',
+) => {
+  return [...documents].sort((a, b) => {
+    const aVal = a[sortBy as keyof KBDocument]
+    const bVal = b[sortBy as keyof KBDocument]
 
+    if (aVal == null || bVal == null) return 0
+    const aCmp = typeof aVal === 'string' ? aVal.toLowerCase() : Number(aVal)
+    const bCmp = typeof bVal === 'string' ? bVal.toLowerCase() : Number(bVal)
+
+    if (sortOrder === 'asc') return aCmp < bCmp ? -1 : aCmp > bCmp ? 1 : 0
+    return aCmp > bCmp ? -1 : aCmp < bCmp ? 1 : 0
+  })
+}
+
+const filterDocuments = (documents: KBDocument[], query: GetDocumentsQuery) => {
+  const { search, status, fileType } = query
+  let filtered = [...documents]
+
+  if (search) {
+    const needle = search.toLowerCase()
+    filtered = filtered.filter(
+      (doc) =>
+        doc.name.toLowerCase().includes(needle) ||
+        doc.uploadedBy.toLowerCase().includes(needle) ||
+        doc.tenantName.toLowerCase().includes(needle),
+    )
+  }
+  if (status) filtered = filtered.filter((doc) => doc.status === status)
+  if (fileType) filtered = filtered.filter((doc) => doc.fileType === fileType)
+  return filtered
+}
+
+class RealDocumentService {
   async getDocuments(query: GetDocumentsQuery = {}): Promise<GetDocumentsResponse> {
-    await this.delay(400)
+    const page = query.page || 1
+    const limit = query.limit || 50
+    const sortBy = query.sortBy || DocumentSortBy.UPLOADED_AT
+    const sortOrder = query.sortOrder || 'desc'
 
-    const {
-      page = 1,
-      limit = 50,
-      search = '',
-      status,
-      fileType,
-      sortBy = DocumentSortBy.UPLOADED_AT,
-      sortOrder = 'desc',
-    } = query
-
-    let filtered = [...this.documents]
-
-    // Search filter
-    if (search) {
-      const s = search.toLowerCase()
-      filtered = filtered.filter(
-        (doc) =>
-          doc.name.toLowerCase().includes(s) ||
-          doc.uploadedBy.toLowerCase().includes(s) ||
-          doc.tenantName.toLowerCase().includes(s),
-      )
+    // Backend currently supports base listing; we still pass filters for forward compatibility.
+    let response
+    try {
+      response = await apiClient.get<ApiDocument[]>('/knowledge-base', {
+        params: {
+          search: query.search,
+          status: query.status,
+          fileType: query.fileType,
+          sortBy,
+          sortOrder,
+          page,
+          limit,
+        },
+      })
+    } catch (error) {
+      throw toAppError(error, 'Failed to fetch documents')
     }
 
-    // Status filter
-    if (status) {
-      filtered = filtered.filter((doc) => doc.status === status)
-    }
-
-    // FileType filter
-    if (fileType) {
-      filtered = filtered.filter((doc) => doc.fileType === fileType)
-    }
-
-    // Sorting
-    filtered.sort((a, b) => {
-      let aVal: string | number = a[sortBy as keyof KBDocument] as string | number
-      let bVal: string | number = b[sortBy as keyof KBDocument] as string | number
-
-      if (typeof aVal === 'string') {
-        aVal = aVal.toLowerCase()
-        bVal = (bVal as string).toLowerCase()
-      }
-
-      if (sortOrder === 'asc') {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
-      }
-    })
-
-    // Pagination
-    const totalCount = filtered.length
-    const totalPages = Math.ceil(totalCount / limit)
-    const startIndex = (page - 1) * limit
-    const paginated = filtered.slice(startIndex, startIndex + limit)
-
-    return {
-      documents: paginated,
-      totalCount,
-      totalPages,
-      currentPage: page,
-      hasNext: page < totalPages,
-      hasPrev: page > 1,
-    }
+    const currentUser = getCurrentUser()
+    const tenantId = getCurrentTenantId()
+    const scoped = response.data.filter((doc) => isTenantScopedRecord(doc.tenantId, tenantId))
+    const mapped = scoped.map((doc) =>
+      apiDocumentToDocument(doc, {
+        tenantName: currentUser?.tenantName,
+        uploadedBy: currentUser?.fullName || 'System',
+      }),
+    )
+    const filtered = filterDocuments(mapped, query)
+    const sorted = sortDocuments(filtered, sortBy, sortOrder)
+    return buildPagination(sorted, page, limit)
   }
 
   async getDocumentById(id: string): Promise<KBDocument | null> {
-    await this.delay(200)
-    return this.documents.find((doc) => doc.id === id) || null
+    const tenantId = getCurrentTenantId()
+    const currentUser = getCurrentUser()
+
+    try {
+      const byId = await apiClient.get<ApiDocument>(`/knowledge-base/${id}`)
+      if (!isTenantScopedRecord(byId.data.tenantId, tenantId)) return null
+      return apiDocumentToDocument(byId.data, {
+        tenantName: currentUser?.tenantName,
+        uploadedBy: currentUser?.fullName || 'System',
+      })
+    } catch {
+      // Fallback for backends that only expose list endpoint.
+      const all = await this.getDocuments({ page: 1, limit: 1000 })
+      const found = all.documents.find((doc) => doc.id === id) ?? null
+      if (!found) return null
+      if (currentUser?.tenantName && !found.tenantName) {
+        return { ...found, tenantName: currentUser.tenantName }
+      }
+      return found
+    }
   }
 
   async uploadDocument(file: File): Promise<KBDocument> {
-    // Simulate upload + processing delay
-    await this.delay(1500)
+    const formData = new FormData()
+    formData.append('file', file)
 
-    const fileType = getFileTypeFromExtension(file.name) || DocumentFileType.TXT
-
-    const newDoc: KBDocument = {
-      id: `doc-${Date.now()}`,
-      name: file.name,
-      fileType,
-      size: file.size,
-      status: DocumentStatus.PROCESSING,
-      uploadedAt: new Date().toISOString(),
-      uploadedBy: 'Current User',
-      tenantName: 'Acme Corp',
-      chunkCount: 0,
-      embeddingStatus: EmbeddingStatus.PENDING,
+    let response
+    try {
+      response = await apiClient.post<{
+        documentId: string
+        title: string
+        chunksCount: number
+        totalChunks: number
+      }>('/knowledge-base/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    } catch (error) {
+      throw toAppError(error, 'Document upload failed')
     }
 
-    this.documents.unshift(newDoc)
+    const currentUser = getCurrentUser()
 
-    // Simulate processing completion after a delay
-    setTimeout(() => {
-      const idx = this.documents.findIndex((d) => d.id === newDoc.id)
-      if (idx !== -1) {
-        this.documents[idx] = {
-          ...this.documents[idx],
-          status: DocumentStatus.READY,
-          chunkCount: Math.floor(Math.random() * 30) + 5,
-          embeddingStatus: EmbeddingStatus.COMPLETED,
-        }
-      }
-    }, 3000)
-
-    return newDoc
+    return {
+      id: response.data.documentId,
+      name: response.data.title,
+      fileType: getFileTypeFromExtension(response.data.title) ?? DocumentFileType.TXT,
+      size: file.size,
+      status: response.data.chunksCount > 0 ? DocumentStatus.READY : DocumentStatus.PROCESSING,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: currentUser?.fullName || currentUser?.email || 'Current User',
+      tenantName: currentUser?.tenantName || 'Organization',
+      chunkCount: response.data.chunksCount,
+      embeddingStatus:
+        response.data.chunksCount > 0 ? EmbeddingStatus.COMPLETED : EmbeddingStatus.IN_PROGRESS,
+      metadata: {
+        totalChunks: response.data.totalChunks,
+      },
+    }
   }
 
   async deleteDocument(id: string): Promise<void> {
-    await this.delay(400)
-
-    const idx = this.documents.findIndex((doc) => doc.id === id)
-    if (idx === -1) {
-      throw new Error('Document not found')
+    try {
+      await apiClient.delete(`/knowledge-base/${id}`)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status
+        if (status === 404 || status === 405) {
+          throw new AppError('unsupported', 'Document deletion is not supported by this backend yet')
+        }
+      }
+      throw toAppError(error, 'Document deletion failed')
     }
-
-    this.documents.splice(idx, 1)
   }
 
   async getDocumentStats(): Promise<DocumentStats> {
-    await this.delay(200)
-
+    const documents = (await this.getDocuments({ page: 1, limit: 1000 })).documents
     const stats: DocumentStats = {
-      total: this.documents.length,
+      total: documents.length,
       byStatus: {
         [DocumentStatus.UPLOADING]: 0,
         [DocumentStatus.PROCESSING]: 0,
@@ -261,22 +208,68 @@ class MockDocumentService {
       averageChunks: 0,
     }
 
-    this.documents.forEach((doc) => {
+    documents.forEach((doc) => {
       stats.byStatus[doc.status]++
       stats.byFileType[doc.fileType]++
       stats.totalChunks += doc.chunkCount
     })
-
-    stats.averageChunks =
-      stats.total > 0 ? Math.round(stats.totalChunks / stats.total) : 0
-
+    stats.averageChunks = stats.total > 0 ? Math.round(stats.totalChunks / stats.total) : 0
     return stats
-  }
-
-  resetData(): void {
-    this.documents = [...MOCK_DOCUMENTS]
   }
 }
 
-// Singleton instance
-export const documentService = new MockDocumentService()
+class MockDocumentService extends RealDocumentService {
+  private documents: KBDocument[] = [
+    {
+      id: 'doc-1',
+      name: 'Product Requirements Document.pdf',
+      fileType: DocumentFileType.PDF,
+      size: 2457600,
+      status: DocumentStatus.READY,
+      uploadedAt: '2024-01-15T10:00:00Z',
+      uploadedBy: 'Alex Morgan',
+      tenantName: 'Acme Corp',
+      chunkCount: 24,
+      embeddingStatus: EmbeddingStatus.COMPLETED,
+    },
+  ]
+
+  async getDocuments(query: GetDocumentsQuery = {}): Promise<GetDocumentsResponse> {
+    const page = query.page || 1
+    const limit = query.limit || 50
+    const sortBy = query.sortBy || DocumentSortBy.UPLOADED_AT
+    const sortOrder = query.sortOrder || 'desc'
+    const filtered = filterDocuments(this.documents, query)
+    const sorted = sortDocuments(filtered, sortBy, sortOrder)
+    return buildPagination(sorted, page, limit)
+  }
+
+  async getDocumentById(id: string): Promise<KBDocument | null> {
+    return this.documents.find((doc) => doc.id === id) ?? null
+  }
+
+  async uploadDocument(file: File): Promise<KBDocument> {
+    const uploaded: KBDocument = {
+      id: `doc-${Date.now()}`,
+      name: file.name,
+      fileType: getFileTypeFromExtension(file.name) ?? DocumentFileType.TXT,
+      size: file.size,
+      status: DocumentStatus.PROCESSING,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: 'Current User',
+      tenantName: 'Acme Corp',
+      chunkCount: 0,
+      embeddingStatus: EmbeddingStatus.PENDING,
+    }
+    this.documents.unshift(uploaded)
+    return uploaded
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    this.documents = this.documents.filter((doc) => doc.id !== id)
+  }
+}
+
+export const documentService = env.enableMockApi
+  ? new MockDocumentService()
+  : new RealDocumentService()

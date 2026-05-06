@@ -4,6 +4,7 @@ import { Button, Input, Label } from '@/components/ui'
 import { useAuth } from '@/features/auth/use-auth'
 import { authService } from '@/services/auth/auth.service'
 import { validators, validateForm } from '@/utils/validation'
+import { toPublicErrorMessage } from '@/lib/errors'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 type RegisterFormData = {
@@ -53,6 +54,7 @@ export function RegisterPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     setApiError('')
 
     const validationErrors = validateForm(formData, validationSchema)
@@ -73,11 +75,7 @@ export function RegisterPage() {
       login(response.accessToken, response.user)
       navigate('/dashboard')
     } catch (err) {
-      if (err instanceof Error) {
-        setApiError(err.message || 'Registration failed')
-      } else {
-        setApiError('An error occurred. Please try again.')
-      }
+      setApiError(toPublicErrorMessage(err, 'Registration failed. Please try again.'))
     } finally {
       setIsLoading(false)
     }
