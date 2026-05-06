@@ -7,9 +7,10 @@ import {
   MessageSquare,
   Settings,
   LogOut,
+  Sparkles,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
-import { Button, Avatar, AvatarFallback } from '@/components/ui'
+import { Avatar, AvatarFallback } from '@/components/ui'
 import { getInitials } from '@/utils/format'
 import { useI18n } from '@/i18n'
 
@@ -48,17 +49,21 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     onNavigate?.()
   }
 
-
-
   return (
-    <div className="flex h-full flex-col bg-sidebar">
+    <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-sidebar-border px-6">
-        <span className="text-xl font-bold">Aivora</span>
+      <div className="flex h-14 items-center gap-2.5 px-5 border-b border-sidebar-border">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+          <Sparkles className="h-4 w-4 text-primary-foreground" />
+        </div>
+        <span className="text-lg font-bold tracking-tight text-foreground">Aivora</span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          Menu
+        </p>
         {navItems.map((item) => (
           <NavLink
             key={item.href}
@@ -66,14 +71,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             onClick={handleNavClick}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150',
                 isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm'
+                  : 'text-sidebar-foreground hover:bg-muted/60 hover:text-foreground'
               )
             }
           >
-            <item.icon className="h-5 w-5" />
+            <item.icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
             {item.href === '/dashboard' && t('nav.dashboard')}
             {item.href === '/tasks' && t('nav.tasks')}
             {item.href === '/knowledge-base' && t('nav.knowledge')}
@@ -83,32 +88,32 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-4">
-        <div className="mb-3 flex items-center gap-3 px-2">
+      <div className="border-t border-sidebar-border p-3">
+        <div className="flex items-center gap-3 rounded-lg px-2 py-2">
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary text-xs text-primary-foreground">
+            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
               {getInitials(user?.fullName)}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 truncate">
-            <p className="truncate text-sm font-medium">{user?.fullName || user?.email}</p>
-            <p className="text-xs text-muted-foreground">{user?.role}</p>
+          <div className="flex-1 min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">{user?.fullName || user?.email}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.role}</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" className="flex-1 justify-start">
-            <Settings className="mr-2 h-4 w-4" />
-            {t('common.settings')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="flex-1 justify-start text-destructive hover:text-destructive"
+        <div className="flex gap-1 mt-1">
+          <button
+            className="flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <Settings className="h-3.5 w-3.5" />
+            {t('common.settings')}
+          </button>
+          <button
+            onClick={logout}
+            className="flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <LogOut className="h-3.5 w-3.5" />
             {t('common.logout')}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

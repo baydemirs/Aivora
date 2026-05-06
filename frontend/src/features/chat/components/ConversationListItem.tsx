@@ -27,16 +27,16 @@ export function ConversationListItem({
     <button
       onClick={onClick}
       className={cn(
-        'w-full rounded-xl p-3 text-left transition-all duration-150',
-        'hover:bg-muted/80',
-        isActive && 'bg-primary/10 hover:bg-primary/15 ring-1 ring-primary/20',
+        'w-full rounded-lg p-3 text-left transition-all duration-150',
+        'hover:bg-muted/60',
+        isActive && 'bg-primary/5 hover:bg-primary/8 border-l-2 border-l-primary',
       )}
     >
       <div className="flex items-start gap-3">
         <div
           className={cn(
             'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-            isActive ? 'bg-primary/20' : 'bg-muted',
+            isActive ? 'bg-primary/10' : 'bg-muted',
           )}
         >
           <MessageSquare
@@ -44,9 +44,9 @@ export function ConversationListItem({
           />
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1">
+        <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex items-center justify-between gap-2">
-            <p className="truncate text-sm font-medium">{conversation.title}</p>
+            <p className={cn('truncate text-sm', isActive ? 'font-semibold text-foreground' : 'font-medium text-foreground')}>{conversation.title}</p>
             <span className="shrink-0 text-[10px] text-muted-foreground">
               {formatTime(conversation.updatedAt)}
             </span>
@@ -58,8 +58,8 @@ export function ConversationListItem({
             </p>
           )}
 
-          <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+          <div className="flex items-center gap-1 mt-0.5">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
               {conversation.messageCount} msgs
             </Badge>
           </div>

@@ -1,4 +1,4 @@
-import { Menu, User, LogOut, ChevronDown } from 'lucide-react'
+import { Menu, User, LogOut, ChevronDown, Globe } from 'lucide-react'
 import { Button, Avatar, AvatarFallback } from '@/components/ui'
 import { useAuth } from '@/features/auth/use-auth'
 import { getInitials } from '@/utils/format'
@@ -40,75 +40,75 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
     }
   }, [isDropdownOpen])
 
-
-
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border/60 bg-card/80 backdrop-blur-sm px-4 lg:px-6">
       <Button
         variant="ghost"
         size="icon"
-        className="lg:hidden"
+        className="lg:hidden h-8 w-8"
         onClick={onMenuClick}
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-4 w-4" />
         <span className="sr-only">Toggle menu</span>
       </Button>
 
       {title && (
-        <h1 className="text-lg font-semibold lg:text-xl">{title}</h1>
+        <h1 className="text-base font-semibold text-foreground">{title}</h1>
       )}
 
-      <div className="ml-auto flex items-center gap-2">
-        <div className="hidden items-center gap-2 lg:flex">
-          <span className="text-sm text-muted-foreground">{t('topbar.language')}</span>
+      <div className="ml-auto flex items-center gap-3">
+        {/* Language Selector */}
+        <div className="hidden items-center gap-1.5 lg:flex">
+          <Globe className="h-3.5 w-3.5 text-muted-foreground" />
           <select
             value={language}
             onChange={(event) => setLanguage(event.target.value as 'en' | 'tr')}
-            className="rounded-md border bg-background px-2 py-1 text-sm"
+            className="rounded-md border-0 bg-transparent px-1 py-0.5 text-xs text-muted-foreground focus:outline-none focus:ring-0 cursor-pointer"
           >
             <option value="en">{t('lang.en')}</option>
             <option value="tr">{t('lang.tr')}</option>
           </select>
         </div>
+
+        {/* Separator */}
+        <div className="hidden lg:block h-5 w-px bg-border" />
+
+        {/* User Menu */}
         {user && (
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 rounded-lg p-2 transition-colors hover:bg-muted"
+              className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/60"
             >
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-xs text-primary-foreground">
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
                   {getInitials(user.fullName)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left lg:block">
-                <p className="text-sm font-medium">{user.fullName}</p>
-                <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                  {user.email}
-                </p>
+                <p className="text-sm font-medium leading-tight">{user.fullName}</p>
               </div>
-              <ChevronDown className="hidden h-4 w-4 text-muted-foreground lg:block" />
+              <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground lg:block" />
             </button>
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-lg border bg-background shadow-lg">
-                <div className="border-b p-3">
-                  <p className="text-sm font-medium">{user.fullName}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {user.tenantName}
-                  </p>
+              <div className="absolute right-0 mt-1.5 w-60 rounded-xl border border-border/60 bg-card shadow-lg animate-fade-in overflow-hidden">
+                <div className="px-4 py-3 border-b border-border/60">
+                  <p className="text-sm font-medium text-foreground">{user.fullName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  {user.tenantName && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{user.tenantName}</p>
+                  )}
                 </div>
-                <div className="p-1">
+                <div className="p-1.5">
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false)
-                      // Settings action - not implemented yet
                     }}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted/60"
                   >
-                    <User className="h-4 w-4" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     {t('topbar.profileSettings')}
                   </button>
                   <button
@@ -116,7 +116,7 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                       setIsDropdownOpen(false)
                       logout()
                     }}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
                   >
                     <LogOut className="h-4 w-4" />
                     {t('topbar.signOut')}

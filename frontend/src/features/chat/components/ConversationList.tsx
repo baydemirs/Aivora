@@ -27,7 +27,7 @@ export function ConversationList({
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
-        <div className="p-3 space-y-3 border-b">
+        <div className="p-3 space-y-3 border-b border-border/60">
           <Skeleton className="h-9 w-full rounded-lg" />
           <Skeleton className="h-9 w-full rounded-lg" />
         </div>
@@ -52,16 +52,16 @@ export function ConversationList({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-3 space-y-2 border-b shrink-0">
+      <div className="p-3 space-y-2.5 border-b border-border/60 shrink-0">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Conversations</h3>
           <Button
             size="sm"
             onClick={onNewConversation}
             disabled={isCreating}
-            className="h-8 rounded-lg"
+            className="h-7 rounded-lg text-xs"
           >
-            <Plus className="mr-1 h-3.5 w-3.5" />
+            <Plus className="mr-1 h-3 w-3" />
             New
           </Button>
         </div>
@@ -82,7 +82,7 @@ export function ConversationList({
       <ScrollArea className="flex-1 p-2">
         {conversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
               <MessageSquare className="h-6 w-6 text-muted-foreground/50" />
             </div>
             <p className="mt-3 text-sm font-medium text-foreground">No conversations</p>

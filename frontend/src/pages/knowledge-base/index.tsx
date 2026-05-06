@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button } from '@/components/ui'
+import { PageHeader } from '@/components/shared'
 import { FileText } from 'lucide-react'
 import { 
   useDocuments, 
@@ -95,24 +96,16 @@ export function KnowledgeBasePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('kb.title')}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t('kb.subtitle')}
-          </p>
-        </div>
-        
-        {/* Simple top-level stat indicating total ready documents vs total */}
+      <PageHeader title={t('kb.title')} description={t('kb.subtitle')}>
         {statsData && (
-          <div className="bg-muted px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-            <span className="font-semibold">{statsData.byStatus.ready}</span>
-             <span className="text-muted-foreground">{t('kb.readyOf')}</span>
-            <span className="font-semibold">{statsData.total}</span>
+          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card px-3.5 py-2 text-sm shadow-sm">
+            <span className="font-bold text-foreground">{statsData.byStatus.ready}</span>
+            <span className="text-muted-foreground">{t('kb.readyOf')}</span>
+            <span className="font-bold text-foreground">{statsData.total}</span>
             <span className="text-muted-foreground">{t('kb.documents')}</span>
           </div>
         )}
-      </div>
+      </PageHeader>
 
       {/* Upload Area */}
       <DocumentUploadZone 
@@ -141,11 +134,11 @@ export function KnowledgeBasePage() {
         <CardContent>
           {listError ? (
             <div className="py-12 flex flex-col items-center justify-center text-center">
-               <div className="h-12 w-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
+               <div className="h-12 w-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mb-4">
                  <FileText className="h-6 w-6" />
                </div>
-               <p className="text-lg font-medium">{t('kb.failed')}</p>
-               <p className="text-muted-foreground max-w-sm mt-1 mb-4">
+               <p className="text-base font-semibold">{t('kb.failed')}</p>
+               <p className="text-muted-foreground max-w-sm mt-1 mb-4 text-sm">
                  {t('kb.failedDesc')}
                </p>
                <Button variant="outline" onClick={() => window.location.reload()}>
@@ -153,12 +146,12 @@ export function KnowledgeBasePage() {
                </Button>
             </div>
           ) : !isListLoading && listData?.documents.length === 0 ? (
-            <div className="py-16 flex flex-col items-center justify-center text-center border rounded-lg border-dashed bg-muted/30">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+            <div className="py-16 flex flex-col items-center justify-center text-center border rounded-xl border-dashed bg-muted/20">
+              <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mb-4">
                 <FileText className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-lg font-medium text-foreground">{t('kb.empty')}</p>
-              <p className="text-muted-foreground max-w-sm mt-1">
+              <p className="text-base font-semibold text-foreground">{t('kb.empty')}</p>
+              <p className="text-muted-foreground max-w-sm mt-1 text-sm">
                 {filters.searchQuery || filters.status !== 'all' || filters.fileType !== 'all'
                   ? t('kb.emptyWithFilter')
                   : t('kb.emptyWithoutFilter')}
