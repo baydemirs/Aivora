@@ -13,6 +13,8 @@ export class QdrantService implements OnModuleInit {
   private readonly client: QdrantClient;
   private readonly logger = new Logger(QdrantService.name);
   private readonly collectionName = 'aivora_documents';
+  private readonly initTimeoutMs: number;
+  private readonly skipInit: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.client = new QdrantClient({
@@ -21,10 +23,34 @@ export class QdrantService implements OnModuleInit {
         'http://localhost:6333',
       ),
     });
+    this.initTimeoutMs = Number(
+      this.configService.get<string>('QDRANT_INIT_TIMEOUT_MS', '5000'),
+    );
+    this.skipInit =
+      this.configService.get<string>('QDRANT_SKIP_INIT', 'false') === 'true';
   }
 
   async onModuleInit() {
-    await this.ensureCollection();
+    if (this.skipInit) {
+      this.logger.warn(
+        'Qdrant startup checks are disabled by QDRANT_SKIP_INIT=true.',
+      );
+      return;
+    }
+
+    const timeoutSentinel = Symbol('qdrant-init-timeout');
+    const result = await Promise.race([
+      this.ensureCollection().then(() => 'ready' as const),
+      new Promise<symbol>((resolve) =>
+        setTimeout(() => resolve(timeoutSentinel), this.initTimeoutMs),
+      ),
+    ]);
+
+    if (result === timeoutSentinel) {
+      this.logger.warn(
+        `Qdrant init timed out after ${this.initTimeoutMs}ms. Continuing startup without vector readiness.`,
+      );
+    }
   }
 
   private async ensureCollection() {
