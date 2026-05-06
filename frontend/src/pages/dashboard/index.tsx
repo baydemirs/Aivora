@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@/components/ui'
-import { useAuth } from '@/features/auth/auth-context'
+import { useAuth } from '@/features/auth/use-auth'
 import { useTaskStats } from '@/features/tasks/hooks/useTasks'
 import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { ListTodo, FileText, MessageSquare, CheckCircle, Clock, Building2, AlertCircle } from 'lucide-react'

@@ -1,0 +1,258 @@
+# 🧠 Aivora - Proje Analiz Raporu
+
+## Ürün Özeti
+
+**Aivora**, kurumsal firmalar için yapay zeka destekli müşteri iletişimi, bilgi tabanı yönetimi ve görev otomasyonu sağlayan bir SaaS platformudur. Multi-tenant (çok kiracılı) mimaride çalışır.
+
+---
+
+## 🏗️ Mimari Genel Bakış
+
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (React + Vite)"]
+        UI["UI Components (ShadCN)"]
+        Pages["Pages (Dashboard, Chat, KB, Tasks)"]
+        Auth["Auth Context + Guards"]
+        Services["API Services"]
+    end
+    
+    subgraph Backend["Backend (NestJS)"]
+        AuthMod["Auth Module (JWT + bcrypt)"]
+        ChatMod["Chat Module"]
+        RAGMod["RAG Module"]
+        KBMod["Knowledge Base Module"]
+        PRDMod["PRD Tracker Module"]
+        TenantMod["Tenant Module"]
+    end
+    
+    subgraph Data["Data Layer"]
+        PG["PostgreSQL (Supabase)"]
+        Qdrant["Qdrant Vector DB"]
+        OpenAI["OpenAI API"]
+    end
+    
+    Frontend --> Backend
+    AuthMod --> PG
+    ChatMod --> RAGMod
+    RAGMod --> OpenAI
+    RAGMod --> Qdrant
+    KBMod --> OpenAI
+    KBMod --> Qdrant
+    KBMod --> PG
+    PRDMod --> PG
+    TenantMod --> PG
+```
+
+---
+
+## 📦 Teknoloji Yığını
+
+| Katman | Teknoloji | Versiyon |
+|--------|-----------|----------|
+| **Backend** | NestJS | ^11.0.1 |
+| **Frontend** | React + TypeScript | ^19.2.4 |
+| **Build** | Vite | ^8.0.1 |
+| **Styling** | TailwindCSS v4 | ^4.2.2 |
+| **UI Kit** | ShadCN-style (custom) | - |
+| **Database** | PostgreSQL (Supabase) | - |
+| **ORM** | Prisma | ^7.5.0 |
+| **Vector DB** | Qdrant | JS Client ^1.17.0 |
+| **AI** | OpenAI (gpt-4o-mini, text-embedding-3-small) | ^6.32.0 |
+| **Auth** | JWT + bcrypt + Passport | - |
+| **State** | React Context + TanStack Query | ^5.95.2 |
+| **Routing** | React Router | ^7.13.2 |
+
+---
+
+## 🗄️ Veritabanı Şeması
+
+```mermaid
+erDiagram
+    Tenant ||--o{ User : has
+    Tenant ||--o{ PrdTask : has
+    Tenant ||--o{ Document : has
+    Tenant ||--o{ Conversation : has
+    Document ||--o{ DocumentChunk : has
+    Conversation ||--o{ Message : has
+
+    Tenant {
+        string id PK
+        string name
+        datetime createdAt
+        datetime updatedAt
+    }
+    User {
+        string id PK
+        string email UK
+        string password
+        enum role "ADMIN|USER"
+        string tenantId FK
+    }
+    PrdTask {
+        string id PK
+        string title
+        string module
+        enum status "PENDING|IN_PROGRESS|COMPLETED"
+        string tenantId FK
+    }
+    Document {
+        string id PK
+        string title
+        string tenantId FK
+    }
+    DocumentChunk {
+        string id PK
+        string documentId FK
+        string content
+        string embeddingId
+    }
+    Conversation {
+        string id PK
+        string title
+        string tenantId FK
+    }
+    Message {
+        string id PK
+        string conversationId FK
+        string content
+        string role "user|assistant"
+    }
+```
+
+---
+
+## 📂 Proje Yapısı
+
+### Backend (`/src`)
+| Modül | Dosyalar | Açıklama |
+|-------|----------|----------|
+| `auth/` | controller, service, module, dto, guards, strategies, decorators | JWT tabanlı kimlik doğrulama, register/login |
+| `chat/` | controller, service, module, dto | Konuşma yönetimi, RAG entegrasyonlu mesajlaşma |
+| `rag/` | controller, service, module, dto | Retrieval-Augmented Generation pipeline |
+| `knowledge-base/` | controller, service, module | Doküman yükleme, PDF/DOCX parse, chunking, embedding |
+| `openai/` | service, module | OpenAI API wrapper (embedding + chat completion) |
+| `qdrant/` | service, module | Qdrant vektör DB yönetimi, collection oluşturma, arama |
+| `tenant/` | controller, service, module, dto | Multi-tenant yönetimi |
+| `prd-tracker/` | controller, service, module, dto | Görev takibi (PRD tasks) |
+| `database/` | prisma service | Prisma client singleton |
+| `config/` | config module | Environment konfigürasyonu |
+| `common/` | filters | Global exception filter |
+
+### Frontend (`/frontend/src`)
+| Dizin | İçerik | Açıklama |
+|-------|--------|----------|
+| `pages/dashboard/` | Dashboard sayfası | İstatistik kartları, son aktiviteler |
+| `pages/chat/` | Chat sayfası | AI sohbet arayüzü |
+| `pages/knowledge-base/` | Bilgi tabanı | Doküman yönetimi |
+| `pages/prd-tracker/` | Görev takibi | Task CRUD, filtreleme |
+| `pages/auth/` | Login & Register | Form validasyon, mock auth |
+| `pages/translate/` | Çeviri sayfası | (Yapısı mevcut) |
+| `components/ui/` | 14 UI bileşeni | Button, Card, Dialog, Table, Select, vb. |
+| `components/layout/` | Sidebar, Topbar | Dashboard layout |
+| `features/` | Auth, Chat, Documents, Tasks, Tenant | Domain-specific logic |
+| `services/` | API, Auth, Chat, Documents, Tasks, Translate | Backend API istemcileri |
+| `i18n/` | Çoklu dil desteği | Internationalization |
+| `store/` | State yönetimi | (Boş - Context kullanılıyor) |
+
+---
+
+## ✅ Tamamlanan Özellikler (Faz 1 + Faz 2)
+
+### Backend
+- [x] NestJS projesi kurulumu (modüler mimari)
+- [x] PostgreSQL + Prisma ORM entegrasyonu (Supabase)
+- [x] JWT tabanlı kimlik doğrulama (register + login)
+- [x] Rol tabanlı erişim (RBAC: ADMIN/USER)
+- [x] Multi-tenant veri izolasyonu
+- [x] RAG pipeline (embedding → Qdrant arama → LLM yanıt)
+- [x] Bilgi tabanı (PDF/DOCX/TXT parsing, chunking, embedding)
+- [x] Chat sistemi (konuşma oluşturma, mesaj geçmişi)
+- [x] Görev yönetimi (AI tarafından otomatik görev oluşturma)
+- [x] Rate limiting (ThrottlerModule)
+- [x] Global validation pipe + exception filter
+- [x] Helmet güvenlik headers
+- [x] CORS yapılandırması
+- [x] Retry mekanizması (OpenAI çağrıları)
+
+### Frontend
+- [x] Vite + React + TypeScript projesi
+- [x] TailwindCSS v4 + ShadCN-style bileşenler
+- [x] Auth akışı (login, register, session restore, logout)
+- [x] Route guard sistemi (ProtectedRoute / PublicRoute)
+- [x] Mock auth service (backend olmadan test)
+- [x] Dashboard sayfası (istatistikler)
+- [x] Chat sayfası (AI konuşma arayüzü)
+- [x] Knowledge Base sayfası (doküman yönetimi)
+- [x] PRD Tracker sayfası (görev takibi)
+- [x] Sidebar + Topbar layout
+- [x] i18n yapısı
+- [x] Form validation utilities
+- [x] Type-safe yapı
+
+---
+
+## ❌ Yapılmamış Özellikler (PRD'ye göre)
+
+### Faz 2 — Öncelikli
+| Özellik | Kategori | Durum |
+|---------|----------|-------|
+| Çok kanallı entegrasyon (Web widget, WhatsApp) | Entegrasyon | ❌ |
+| Analitik Dashboard | Yönetim Paneli | ❌ |
+| AI güvenlik katmanı (prompt injection koruması) | Güvenlik | ❌ |
+| Redis (önbellek + kuyruk) | Altyapı | ❌ |
+| WebSocket gerçek zamanlı veri | Frontend | ❌ |
+| AI cevap düzenleme ekranı | Yönetim Paneli | ❌ |
+| Cevap analitik Dashboard'u | Yönetim Paneli | ❌ |
+| Prompt yönetim ekranı | Yönetim Paneli | ❌ |
+| Model değiştirme desteği | Yönetim Paneli | ❌ |
+| SLA takibi | Görev Yönetimi | ❌ |
+| Departman bazlı yönlendirme | Görev Yönetimi | ❌ |
+| Doküman versiyon kontrolü | Bilgi Tabanı | ❌ |
+| REST API (harici erişim) | Entegrasyon | ❌ |
+| n8n webhook bağlantısı | Entegrasyon | ❌ |
+| Docker konteynırizasyonu | DevOps | ❌ |
+
+### Faz 3 — İleri Seviye
+| Özellik | Kategori |
+|---------|----------|
+| Otonom süreç motoru | AI Otomasyon |
+| A/B test mekanizması | AI Otomasyon |
+| Müşteri duygu analizi | Analitik |
+| Churn tahmini | Analitik |
+| AI eğitim modülü | AI |
+| Mikro servis mimariye geçiş | Altyapı |
+| CI/CD (GitHub Actions) | DevOps |
+| Monitoring (Prometheus + Grafana) | DevOps |
+
+---
+
+## ⚠️ Önemli Notlar
+
+> [!WARNING]
+> `.env` dosyasında gerçek Supabase credentials ve JWT secret açık olarak bulunuyor. Production'a geçmeden önce bunlar güvenli bir şekilde yönetilmeli.
+
+> [!NOTE]
+> `OPENAI_API_KEY` henüz placeholder (`your-openai-api-key-here`). RAG ve Chat özellikleri çalışması için gerçek bir API key gerekli.
+
+> [!NOTE]
+> Frontend şu anda **mock auth service** kullanıyor (`VITE_USE_MOCK_AUTH`). Backend'e bağlamak için bu flag'in `false` yapılması gerekiyor.
+
+> [!TIP]
+> `store/` dizini boş — state yönetimi React Context ile yapılıyor. Proje büyüdükçe Zustand veya Redux Toolkit'e geçiş düşünülebilir.
+
+---
+
+## 🚀 Sonraki Adımlar İçin Hazır
+
+Proje **Faz 1 tamamlanmış**, **Faz 2 kısmen başlanmış** durumda. Backend core modülleri ve frontend temel sayfaları hazır.
+
+**Geliştirmeye devam etmek için ne üzerinde çalışmak istediğinizi belirtin:**
+1. 🔌 Frontend ↔ Backend entegrasyonu (mock'tan gerçek API'ye geçiş)
+2. 📊 Analitik Dashboard oluşturma
+3. 💬 WebSocket ile gerçek zamanlı chat
+4. 🔒 AI güvenlik katmanı
+5. 🐳 Docker konteynırizasyonu
+6. 🌐 Web widget chatbot
+7. 📱 WhatsApp entegrasyonu
+8. Veya başka bir alan...

@@ -14,6 +14,7 @@ import { FILE_TYPE_CONFIG, formatFileSize, EMBEDDING_STATUS_CONFIG } from '../ty
 import type { KBDocument } from '../types'
 import { DocumentStatusBadge } from './DocumentStatusBadge'
 import { formatDistanceToNow } from 'date-fns'
+import { useI18n } from '@/i18n'
 
 function safeFormatDate(dateString: string): string {
   try {
@@ -36,19 +37,20 @@ export function DocumentList({
   onRowClick,
   onDeleteClick,
 }: DocumentListProps) {
+  const { t } = useI18n()
   if (loading) {
     return (
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>TargetFile</TableHead>
+              <TableHead>{t('kb.targetFile')}</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Uploaded</TableHead>
+              <TableHead>{t('kb.size')}</TableHead>
+              <TableHead>{t('kb.status')}</TableHead>
+              <TableHead className="hidden md:table-cell">{t('kb.uploaded')}</TableHead>
               <TableHead className="hidden lg:table-cell">Chunks</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right">{t('kb.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -79,12 +81,12 @@ export function DocumentList({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>TargetFile</TableHead>
-            <TableHead>Size</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden md:table-cell">Uploaded</TableHead>
-            <TableHead className="hidden lg:table-cell">Vector Data</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>{t('kb.targetFile')}</TableHead>
+            <TableHead>{t('kb.size')}</TableHead>
+            <TableHead>{t('kb.status')}</TableHead>
+            <TableHead className="hidden md:table-cell">{t('kb.uploaded')}</TableHead>
+            <TableHead className="hidden lg:table-cell">{t('kb.vectorData')}</TableHead>
+            <TableHead className="text-right">{t('kb.actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -133,12 +135,17 @@ export function DocumentList({
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="flex items-center gap-1 font-normal">
                         <Database className="h-3 w-3 text-muted-foreground" />
-                        {doc.chunkCount} chunks
+                        {doc.chunkCount} {t('kb.chunks')}
                       </Badge>
                     </div>
                   ) : (
                     <Badge variant="outline" className={`${embeddingConfig.bgColor} ${embeddingConfig.textColor} font-normal border-transparent`}>
-                      {embeddingConfig.label}
+                      {{
+                        Pending: t('doc.pending'),
+                        'In Progress': t('doc.inProgress'),
+                        Completed: t('doc.completed'),
+                        Failed: t('doc.failed'),
+                      }[embeddingConfig.label] || embeddingConfig.label}
                     </Badge>
                   )}
                 </TableCell>
@@ -148,7 +155,7 @@ export function DocumentList({
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => onDeleteClick(doc, e)}
-                    title="Delete document"
+                    title={t('kb.deleteDocument')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

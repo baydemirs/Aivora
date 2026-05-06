@@ -25,6 +25,7 @@ import {
   Clock
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useI18n } from '@/i18n'
 
 interface TaskTableProps {
   tasks: Task[]
@@ -53,6 +54,7 @@ export function TaskTable({
   selectedTaskIds = [],
   onTaskSelect
 }: TaskTableProps) {
+  const { t } = useI18n()
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set())
 
   const toggleDescription = (taskId: string) => {
@@ -80,12 +82,12 @@ export function TaskTable({
           <TableHeader>
             <TableRow>
               {!compact && onTaskSelect && <TableHead className="w-12"></TableHead>}
-              <TableHead>Task</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Module</TableHead>
-              {!compact && <TableHead>Assignee</TableHead>}
-              <TableHead>Updated</TableHead>
+              <TableHead>{t('tasks.task')}</TableHead>
+              <TableHead>{t('tasks.statusCol')}</TableHead>
+              <TableHead>{t('tasks.priorityCol')}</TableHead>
+              <TableHead>{t('tasks.module')}</TableHead>
+              {!compact && <TableHead>{t('tasks.assignee')}</TableHead>}
+              <TableHead>{t('tasks.updated')}</TableHead>
               {showActions && <TableHead className="w-12"></TableHead>}
             </TableRow>
           </TableHeader>
@@ -126,9 +128,9 @@ export function TaskTable({
               <Clock className="h-6 w-6 text-muted-foreground" />
             </div>
           </div>
-          <h3 className="text-lg font-semibold text-foreground">No tasks found</h3>
+          <h3 className="text-lg font-semibold text-foreground">{t('tasks.noTasks')}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Try adjusting your filters or create a new task to get started.
+            {t('tasks.noTasksDesc')}
           </p>
         </div>
       </div>
@@ -157,12 +159,12 @@ export function TaskTable({
                 />
               </TableHead>
             )}
-            <TableHead>Task</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Module</TableHead>
-            {!compact && <TableHead>Assignee</TableHead>}
-            <TableHead>Updated</TableHead>
+            <TableHead>{t('tasks.task')}</TableHead>
+            <TableHead>{t('tasks.statusCol')}</TableHead>
+            <TableHead>{t('tasks.priorityCol')}</TableHead>
+            <TableHead>{t('tasks.module')}</TableHead>
+            {!compact && <TableHead>{t('tasks.assignee')}</TableHead>}
+            <TableHead>{t('tasks.updated')}</TableHead>
             {showActions && <TableHead className="w-12"></TableHead>}
           </TableRow>
         </TableHeader>
@@ -210,7 +212,7 @@ export function TaskTable({
                                 toggleDescription(task.id)
                               }}
                             >
-                              more
+                              {t('tasks.more')}
                             </button>
                           </>
                         ) : (
@@ -224,7 +226,7 @@ export function TaskTable({
                                   toggleDescription(task.id)
                                 }}
                               >
-                                less
+                                {t('tasks.less')}
                               </button>
                             )}
                           </>
@@ -278,7 +280,15 @@ export function TaskTable({
                         : 'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    {moduleConfig?.label || task.module}
+                    {{
+                      Authentication: t('tasks.auth'),
+                      'RAG Pipeline': t('tasks.rag'),
+                      'Chat System': t('tasks.chatModule'),
+                      'Knowledge Base': t('tasks.kbModule'),
+                      Dashboard: t('tasks.dashboardModule'),
+                      API: 'API',
+                      Infrastructure: t('tasks.infrastructure'),
+                    }[moduleConfig?.label || task.module] || moduleConfig?.label || task.module}
                   </Badge>
                 </TableCell>
 
@@ -292,7 +302,7 @@ export function TaskTable({
                         {task.assigneeName}
                       </div>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Unassigned</span>
+                      <span className="text-sm text-muted-foreground">{t('tasks.unassigned')}</span>
                     )}
                   </TableCell>
                 )}

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { taskService } from '../services/tasks.service'
 import { appQueryKeys } from '@/lib/query-keys'
-import { useAuth } from '@/features/auth/auth-context'
+import { useAuth } from '@/features/auth/use-auth'
 import { logDevError } from '@/lib/logger'
 import type {
   Task,

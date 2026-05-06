@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Upload, X, File as FileIcon, Loader2 } from 'lucide-react'
 import { Button, Card, CardContent } from '@/components/ui'
 import { ACCEPTED_FILE_EXTENSIONS, ACCEPTED_FILE_TYPES_DISPLAY, formatFileSize, getFileTypeFromExtension, FILE_TYPE_CONFIG } from '../types'
+import { useI18n } from '@/i18n'
 
 interface DocumentUploadZoneProps {
   onUpload: (files: File[]) => void
@@ -9,6 +10,7 @@ interface DocumentUploadZoneProps {
 }
 
 export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUploadZoneProps) {
+  const { t } = useI18n()
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [rejectedCount, setRejectedCount] = useState(0)
@@ -103,14 +105,14 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
               </div>
               <div>
                 <p className="text-lg font-semibold tracking-tight">
-                  Click to drop files or drag here
+                  {t('kb.uploadDrop')}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Supported formats: {ACCEPTED_FILE_TYPES_DISPLAY}
+                  {t('kb.supportedFormats')}: {ACCEPTED_FILE_TYPES_DISPLAY}
                 </p>
                 {rejectedCount > 0 && (
                   <p className="text-sm text-destructive mt-2">
-                    {rejectedCount} unsupported file{rejectedCount > 1 ? 's' : ''} rejected
+                    {t('kb.unsupportedRejected', { count: rejectedCount, suffix: rejectedCount > 1 ? 's' : '' })}
                   </p>
                 )}
               </div>
@@ -119,14 +121,14 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
             <div className="flex flex-col items-center justify-center space-y-4 py-8">
               <Loader2 className="h-10 w-10 text-primary animate-spin" />
               <div className="space-y-1">
-                <p className="text-lg font-semibold tracking-tight">Uploading documents...</p>
-                <p className="text-sm text-muted-foreground">Please wait while we process your files</p>
+                <p className="text-lg font-semibold tracking-tight">{t('kb.uploadingTitle')}</p>
+                <p className="text-sm text-muted-foreground">{t('kb.uploadingDesc')}</p>
               </div>
             </div>
           ) : (
             <div className="w-full text-left" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">{selectedFiles.length} file{selectedFiles.length !== 1 && 's'} selected</h3>
+                <h3 className="font-semibold">{t('kb.filesSelected', { count: selectedFiles.length, suffix: selectedFiles.length !== 1 ? 's' : '' })}</h3>
                 <div className="space-x-2">
                   <Button 
                     variant="outline" 
@@ -134,7 +136,7 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                     onClick={() => setSelectedFiles([])}
                     disabled={isUploading}
                   >
-                    Clear All
+                    {t('kb.clearAll')}
                   </Button>
                   <Button 
                     size="sm" 
@@ -143,7 +145,7 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                     disabled={isUploading || selectedFiles.length === 0}
                   >
                     <Upload className="h-4 w-4" />
-                    Upload Files
+                    {t('kb.uploadFiles')}
                   </Button>
                 </div>
               </div>
@@ -191,7 +193,7 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                   className="text-muted-foreground"
                   disabled={isUploading}
                 >
-                  + Add more files
+                  {t('kb.addMoreFiles')}
                 </Button>
               </div>
             </div>

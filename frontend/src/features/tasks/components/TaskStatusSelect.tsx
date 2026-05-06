@@ -13,6 +13,7 @@ import {
   Eye,
   CheckCircle
 } from 'lucide-react'
+import { useI18n } from '@/i18n'
 
 interface TaskStatusSelectProps {
   value: TaskStatus
@@ -37,6 +38,7 @@ export function TaskStatusSelect({
   placeholder = "Select status...",
   size = 'md'
 }: TaskStatusSelectProps) {
+  const { t } = useI18n()
   const triggerSize = size === 'sm' ? 'h-8 text-xs' :
                      size === 'lg' ? 'h-12 text-base' :
                      'h-10 text-sm'
@@ -62,7 +64,13 @@ export function TaskStatusSelect({
                       }`}
                       style={{ color: `var(--${config.color}-600)` }}
                     />
-                    <span>{config.label}</span>
+                    <span>{{
+                      'To Do': t('tasks.todo'),
+                      'In Progress': t('tasks.inProgress'),
+                      Blocked: t('tasks.blocked'),
+                      Review: t('tasks.review'),
+                      Done: t('tasks.done'),
+                    }[config.label] || config.label}</span>
                   </>
                 )
               })()}
@@ -85,7 +93,13 @@ export function TaskStatusSelect({
                 }`}
                 style={{ color: `var(--${config.color}-600)` }}
               />
-              {config.label}
+              {{
+                'To Do': t('tasks.todo'),
+                'In Progress': t('tasks.inProgress'),
+                Blocked: t('tasks.blocked'),
+                Review: t('tasks.review'),
+                Done: t('tasks.done'),
+              }[config.label] || config.label}
             </SelectItem>
           )
         })}

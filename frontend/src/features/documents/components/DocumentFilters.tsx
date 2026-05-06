@@ -14,6 +14,7 @@ import {
   FILE_TYPE_CONFIG,
 } from '../types'
 import type { DocumentFilters as IDocumentFilters } from '../types'
+import { useI18n } from '@/i18n'
 
 interface DocumentFiltersProps {
   filters: IDocumentFilters
@@ -22,6 +23,7 @@ interface DocumentFiltersProps {
 }
 
 export function DocumentFilters({ filters, onFilterChange, disabled }: DocumentFiltersProps) {
+  const { t } = useI18n()
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
       {/* Search */}
@@ -29,7 +31,7 @@ export function DocumentFilters({ filters, onFilterChange, disabled }: DocumentF
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search documents by name, uploader, or tenant..."
+          placeholder={t('kb.search')}
           value={filters.searchQuery}
           onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
           disabled={disabled}
@@ -48,14 +50,20 @@ export function DocumentFilters({ filters, onFilterChange, disabled }: DocumentF
           disabled={disabled}
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={t('kb.status')} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="all">{t('kb.allStatuses')}</SelectItem>
               {Object.entries(DOCUMENT_STATUS_CONFIG).map(([status, config]) => (
                 <SelectItem key={status} value={status}>
-                  {config.label}
+                  {{
+                    Uploading: t('doc.uploading'),
+                    Processing: t('doc.processing'),
+                    Ready: t('doc.ready'),
+                    Error: t('doc.error'),
+                    Archived: t('doc.archived'),
+                  }[config.label] || config.label}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -71,11 +79,11 @@ export function DocumentFilters({ filters, onFilterChange, disabled }: DocumentF
           disabled={disabled}
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="File Type" />
+            <SelectValue placeholder={t('kb.fileType')} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">{t('kb.allTypes')}</SelectItem>
               {Object.entries(FILE_TYPE_CONFIG).map(([type, config]) => (
                 <SelectItem key={type} value={type}>
                   {config.label}

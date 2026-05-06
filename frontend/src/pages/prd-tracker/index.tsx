@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, Button, Skeleton } from '@/components/ui'
-import { Plus, RotateCcw, Download, Filter } from 'lucide-react'
+import { PageHeader } from '@/components/shared'
+import { Plus, RotateCcw, Download } from 'lucide-react'
 
 // Task components and hooks
 import {
@@ -21,8 +22,10 @@ import type {
   GetTasksQuery,
 } from '@/features/tasks/types'
 import { TaskSortBy, TaskStatus } from '@/features/tasks/types'
+import { useI18n } from '@/i18n'
 
 export function PrdTrackerPage() {
+  const { t } = useI18n()
   // State
   const [filters, setFilters] = useState<TaskFiltersType>({
     searchQuery: '',
@@ -134,164 +137,89 @@ export function PrdTrackerPage() {
     ? tasks.find((task) => task.id === selectedTask.id) || selectedTask
     : null
 
+  const statItems = [
+    { label: t('tasks.totalTasks'), value: stats.total, color: 'border-l-primary', onClick: () => setFilters(prev => ({ ...prev, status: 'all' })) },
+    { label: t('tasks.todo'), value: stats.todo, color: 'border-l-stone-400', onClick: () => setFilters(prev => ({ ...prev, status: TaskStatus.TODO })) },
+    { label: t('tasks.inProgress'), value: stats.inProgress, color: 'border-l-blue-500', onClick: () => setFilters(prev => ({ ...prev, status: TaskStatus.IN_PROGRESS })) },
+    { label: t('tasks.review'), value: stats.review, color: 'border-l-amber-500', onClick: () => setFilters(prev => ({ ...prev, status: TaskStatus.REVIEW })) },
+    { label: t('tasks.done'), value: stats.done, color: 'border-l-emerald-500', onClick: () => setFilters(prev => ({ ...prev, status: TaskStatus.DONE })) },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">PRD Tracker</h1>
-          <p className="text-muted-foreground">
-            Manage and track product requirements and development tasks
-          </p>
-        </div>
+      <PageHeader title={t('tasks.title')} description={t('tasks.subtitle')}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <RotateCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          {t('common.refresh')}
+        </Button>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <RotateCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Task
-          </Button>
-        </div>
-      </div>
+        <Button className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          {t('tasks.newTask')}
+        </Button>
+      </PageHeader>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}>
-          <CardContent className="pt-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {statItems.map((item) => (
+          <button
+            key={item.label}
+            onClick={item.onClick}
+            className={`flex flex-col rounded-lg border border-border/60 bg-card p-4 text-left shadow-sm transition-all hover:shadow-md hover:border-border border-l-[3px] ${item.color}`}
+          >
             {isStatsLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-12" />
-                <Skeleton className="h-4 w-16" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-6 w-10" />
+                <Skeleton className="h-3.5 w-16" />
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <p className="text-xs text-muted-foreground">Total Tasks</p>
+                <span className="text-xl font-bold text-foreground">{item.value}</span>
+                <span className="text-xs text-muted-foreground mt-0.5">{item.label}</span>
               </>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.TODO }))}>
-          <CardContent className="pt-6">
-            {isStatsLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-12" />
-                <Skeleton className="h-4 w-16" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-gray-600">{stats.todo}</div>
-                <p className="text-xs text-muted-foreground">To Do</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.IN_PROGRESS }))}>
-          <CardContent className="pt-6">
-            {isStatsLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-12" />
-                <Skeleton className="h-4 w-16" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
-                <p className="text-xs text-muted-foreground">In Progress</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.REVIEW }))}>
-          <CardContent className="pt-6">
-            {isStatsLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-12" />
-                <Skeleton className="h-4 w-16" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-yellow-600">{stats.review}</div>
-                <p className="text-xs text-muted-foreground">Review</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-muted/50" onClick={() => setFilters(prev => ({ ...prev, status: TaskStatus.DONE }))}>
-          <CardContent className="pt-6">
-            {isStatsLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-12" />
-                <Skeleton className="h-4 w-16" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-green-600">{stats.done}</div>
-                <p className="text-xs text-muted-foreground">Done</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+          </button>
+        ))}
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TaskFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            showAdvanced={true}
-          />
-        </CardContent>
-      </Card>
+      {/* Filters — inline toolbar */}
+      <TaskFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        showAdvanced={true}
+      />
 
       {/* Bulk Actions */}
       {selectedTaskIds.length > 0 && (
-        <Card className="bg-muted/50">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">
-                {selectedTaskIds.length} task{selectedTaskIds.length > 1 ? 's' : ''} selected
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedTaskIds([])}
-                >
-                  Clear
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Export
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-between rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
+          <span className="text-sm font-medium text-foreground">
+            {selectedTaskIds.length} {t('tasks.selected')}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedTaskIds([])}
+            >
+              {t('tasks.clear')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {t('tasks.export')}
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Tasks Table */}
@@ -299,10 +227,10 @@ export function PrdTrackerPage() {
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
-              Tasks
+              {t('tasks.task')}
               {tasksResponse?.totalCount && (
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({tasksResponse.totalCount} total)
+                  ({tasksResponse.totalCount} {t('tasks.total')})
                 </span>
               )}
             </CardTitle>
@@ -316,7 +244,7 @@ export function PrdTrackerPage() {
                   onClick={handleFiltersReset}
                   className="text-muted-foreground"
                 >
-                  Reset filters
+                  {t('tasks.resetFilters')}
                 </Button>
               ) : null}
             </div>
@@ -330,9 +258,9 @@ export function PrdTrackerPage() {
           )}
           {hasError ? (
             <div className="text-center py-12">
-              <div className="text-destructive mb-2">Failed to load tasks</div>
+              <div className="text-destructive mb-2">{t('tasks.failedToLoad')}</div>
               <Button variant="outline" onClick={handleRefresh}>
-                Try again
+                {t('tasks.tryAgain')}
               </Button>
             </div>
           ) : (
@@ -354,7 +282,7 @@ export function PrdTrackerPage() {
       {tasksResponse && tasksResponse.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Page {tasksResponse.currentPage} of {tasksResponse.totalPages}
+            {t('tasks.pageOf', { current: tasksResponse.currentPage, total: tasksResponse.totalPages })}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -362,14 +290,14 @@ export function PrdTrackerPage() {
               size="sm"
               disabled={!tasksResponse.hasPrev}
             >
-              Previous
+              {t('tasks.previous')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               disabled={!tasksResponse.hasNext}
             >
-              Next
+              {t('tasks.next')}
             </Button>
           </div>
         </div>

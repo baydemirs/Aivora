@@ -24,6 +24,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react'
+import { useI18n } from '@/i18n'
 
 interface TaskFiltersProps {
   filters: TaskFiltersType
@@ -40,6 +41,7 @@ export function TaskFilters({
   moduleOptions = Object.keys(TASK_MODULE_CONFIG),
   assigneeOptions = []
 }: TaskFiltersProps) {
+  const { t } = useI18n()
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
 
   const updateFilters = (updates: Partial<TaskFiltersType>) => {
@@ -73,7 +75,7 @@ export function TaskFilters({
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search tasks..."
+            placeholder={t('tasks.search')}
             value={filters.searchQuery}
             onChange={(e) => updateFilters({ searchQuery: e.target.value })}
             className="pl-8"
@@ -93,10 +95,16 @@ export function TaskFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">{t('tasks.allStatus')}</SelectItem>
               {Object.entries(TASK_STATUS_CONFIG).map(([status, config]) => (
                 <SelectItem key={status} value={status}>
-                  {config.label}
+                  {{
+                    'To Do': t('tasks.todo'),
+                    'In Progress': t('tasks.inProgress'),
+                    Blocked: t('tasks.blocked'),
+                    Review: t('tasks.review'),
+                    Done: t('tasks.done'),
+                  }[config.label] || config.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -113,10 +121,15 @@ export function TaskFilters({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Priority</SelectItem>
+              <SelectItem value="all">{t('tasks.allPriority')}</SelectItem>
               {Object.entries(TASK_PRIORITY_CONFIG).map(([priority, config]) => (
                 <SelectItem key={priority} value={priority}>
-                  {config.label}
+                  {{
+                    Low: t('tasks.low'),
+                    Medium: t('tasks.medium'),
+                    High: t('tasks.high'),
+                    Urgent: t('tasks.urgent'),
+                  }[config.label] || config.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -134,11 +147,11 @@ export function TaskFilters({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={TaskSortBy.UPDATED_AT}>Updated</SelectItem>
-                <SelectItem value={TaskSortBy.CREATED_AT}>Created</SelectItem>
-                <SelectItem value={TaskSortBy.TITLE}>Title</SelectItem>
-                <SelectItem value={TaskSortBy.PRIORITY}>Priority</SelectItem>
-                <SelectItem value={TaskSortBy.STATUS}>Status</SelectItem>
+                <SelectItem value={TaskSortBy.UPDATED_AT}>{t('tasks.updated')}</SelectItem>
+                <SelectItem value={TaskSortBy.CREATED_AT}>{t('tasks.created')}</SelectItem>
+                <SelectItem value={TaskSortBy.TITLE}>{t('tasks.titleCol')}</SelectItem>
+                <SelectItem value={TaskSortBy.PRIORITY}>{t('tasks.priorityCol')}</SelectItem>
+                <SelectItem value={TaskSortBy.STATUS}>{t('tasks.statusCol')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -171,7 +184,7 @@ export function TaskFilters({
               className="flex items-center gap-2"
             >
               <Filter className="h-4 w-4" />
-              Advanced
+              {t('tasks.advanced')}
             </Button>
           )}
 
@@ -183,7 +196,7 @@ export function TaskFilters({
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
-              Clear
+              {t('tasks.clear')}
             </Button>
           )}
         </div>
@@ -193,13 +206,13 @@ export function TaskFilters({
       {showAdvanced && isAdvancedOpen && (
         <div className="grid gap-4 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="text-sm font-medium text-foreground mb-2 sm:col-span-2 lg:col-span-3">
-            Advanced Filters
+            {t('tasks.advancedFilters')}
           </div>
 
           {/* Module Filter */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Module
+              {t('tasks.module')}
             </label>
             <Select
               value={filters.module || 'all'}
@@ -211,10 +224,18 @@ export function TaskFilters({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Modules</SelectItem>
+                <SelectItem value="all">{t('tasks.allModules')}</SelectItem>
                 {moduleOptions.map((module) => (
                   <SelectItem key={module} value={module}>
-                    {TASK_MODULE_CONFIG[module as keyof typeof TASK_MODULE_CONFIG]?.label || module}
+                    {{
+                      Authentication: t('tasks.auth'),
+                      'RAG Pipeline': t('tasks.rag'),
+                      'Chat System': t('tasks.chatModule'),
+                      'Knowledge Base': t('tasks.kbModule'),
+                      Dashboard: t('tasks.dashboardModule'),
+                      API: 'API',
+                      Infrastructure: t('tasks.infrastructure'),
+                    }[TASK_MODULE_CONFIG[module as keyof typeof TASK_MODULE_CONFIG]?.label || module] || TASK_MODULE_CONFIG[module as keyof typeof TASK_MODULE_CONFIG]?.label || module}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -225,7 +246,7 @@ export function TaskFilters({
           {assigneeOptions.length > 0 && (
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Assignee
+                {t('tasks.assignee')}
               </label>
               <Select
                 value={filters.assignee || 'all'}
@@ -237,8 +258,8 @@ export function TaskFilters({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Assignees</SelectItem>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  <SelectItem value="all">{t('tasks.allAssignees')}</SelectItem>
+                  <SelectItem value="unassigned">{t('tasks.unassigned')}</SelectItem>
                   {assigneeOptions.map((assignee) => (
                     <SelectItem key={assignee.id} value={assignee.id}>
                       {assignee.name}
@@ -254,11 +275,11 @@ export function TaskFilters({
       {/* Active Filters Summary */}
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-medium text-muted-foreground">Filters:</span>
+          <span className="text-xs font-medium text-muted-foreground">{t('tasks.filtersLabel')}</span>
 
           {filters.searchQuery && (
             <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
-              Search: "{filters.searchQuery}"
+              {t('tasks.searchLabel')}: "{filters.searchQuery}"
               <X
                 className="h-3 w-3 cursor-pointer hover:text-foreground"
                 onClick={() => updateFilters({ searchQuery: '' })}
@@ -268,7 +289,13 @@ export function TaskFilters({
 
           {filters.status && filters.status !== 'all' && (
             <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
-              Status: {TASK_STATUS_CONFIG[filters.status].label}
+              {t('tasks.statusLabel')}: {{
+                'To Do': t('tasks.todo'),
+                'In Progress': t('tasks.inProgress'),
+                Blocked: t('tasks.blocked'),
+                Review: t('tasks.review'),
+                Done: t('tasks.done'),
+              }[TASK_STATUS_CONFIG[filters.status].label] || TASK_STATUS_CONFIG[filters.status].label}
               <X
                 className="h-3 w-3 cursor-pointer hover:text-foreground"
                 onClick={() => updateFilters({ status: 'all' })}
@@ -278,7 +305,12 @@ export function TaskFilters({
 
           {filters.priority && filters.priority !== 'all' && (
             <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
-              Priority: {TASK_PRIORITY_CONFIG[filters.priority].label}
+              {t('tasks.priorityLabel')}: {{
+                Low: t('tasks.low'),
+                Medium: t('tasks.medium'),
+                High: t('tasks.high'),
+                Urgent: t('tasks.urgent'),
+              }[TASK_PRIORITY_CONFIG[filters.priority].label] || TASK_PRIORITY_CONFIG[filters.priority].label}
               <X
                 className="h-3 w-3 cursor-pointer hover:text-foreground"
                 onClick={() => updateFilters({ priority: 'all' })}
@@ -288,7 +320,15 @@ export function TaskFilters({
 
           {filters.module && filters.module !== 'all' && (
             <div className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
-              Module: {TASK_MODULE_CONFIG[filters.module as keyof typeof TASK_MODULE_CONFIG]?.label || filters.module}
+              {t('tasks.moduleLabel')}: {{
+                Authentication: t('tasks.auth'),
+                'RAG Pipeline': t('tasks.rag'),
+                'Chat System': t('tasks.chatModule'),
+                'Knowledge Base': t('tasks.kbModule'),
+                Dashboard: t('tasks.dashboardModule'),
+                API: 'API',
+                Infrastructure: t('tasks.infrastructure'),
+              }[TASK_MODULE_CONFIG[filters.module as keyof typeof TASK_MODULE_CONFIG]?.label || filters.module] || TASK_MODULE_CONFIG[filters.module as keyof typeof TASK_MODULE_CONFIG]?.label || filters.module}
               <X
                 className="h-3 w-3 cursor-pointer hover:text-foreground"
                 onClick={() => updateFilters({ module: 'all' })}
