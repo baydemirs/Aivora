@@ -134,6 +134,7 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                     variant="outline" 
                     size="sm" 
                     onClick={() => setSelectedFiles([])}
+                    disabled={isUploading}
                   >
                     {t('kb.clearAll')}
                   </Button>
@@ -141,6 +142,7 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                     size="sm" 
                     onClick={handleUploadClick}
                     className="gap-2"
+                    disabled={isUploading || selectedFiles.length === 0}
                   >
                     <Upload className="h-4 w-4" />
                     {t('kb.uploadFiles')}
@@ -173,6 +175,8 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
                         onClick={() => removeFile(i)}
+                        aria-label={`Remove ${file.name}`}
+                        disabled={isUploading}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -187,6 +191,7 @@ export function DocumentUploadZone({ onUpload, isUploading = false }: DocumentUp
                   size="sm" 
                   onClick={() => fileInputRef.current?.click()}
                   className="text-muted-foreground"
+                  disabled={isUploading}
                 >
                   {t('kb.addMoreFiles')}
                 </Button>

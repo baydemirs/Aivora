@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { taskService } from '../services/tasks.service'
+import { appQueryKeys } from '@/lib/query-keys'
+import { useAuth } from '@/features/auth/use-auth'
+import { logDevError } from '@/lib/logger'
 import type {
   Task,
   GetTasksQuery,
@@ -11,18 +14,21 @@ import { TaskStatus } from '../types'
 
 // Query keys
 const taskKeys = {
-  all: ['tasks'] as const,
-  lists: () => [...taskKeys.all, 'list'] as const,
-  list: (query: GetTasksQuery) => [...taskKeys.lists(), query] as const,
-  details: () => [...taskKeys.all, 'detail'] as const,
-  detail: (id: string) => [...taskKeys.details(), id] as const,
-  stats: () => [...taskKeys.all, 'stats'] as const,
+  all: appQueryKeys.tasks.all,
+  lists: appQueryKeys.tasks.lists,
+  list: (query: GetTasksQuery) => appQueryKeys.tasks.list(query as unknown as Record<string, unknown>),
+  details: appQueryKeys.tasks.details,
+  detail: appQueryKeys.tasks.detail,
+  stats: appQueryKeys.tasks.stats,
 }
 
 // Query Hooks
 export const useTasks = (query: GetTasksQuery = {}) => {
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
+
   return useQuery({
-    queryKey: taskKeys.list(query),
+    queryKey: [...taskKeys.list(query), tenantScope],
     queryFn: () => taskService.getTasks(query),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -30,8 +36,11 @@ export const useTasks = (query: GetTasksQuery = {}) => {
 }
 
 export const useTask = (id: string, enabled: boolean = true) => {
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
+
   return useQuery({
-    queryKey: taskKeys.detail(id),
+    queryKey: [...taskKeys.detail(id), tenantScope],
     queryFn: () => taskService.getTaskById(id),
     enabled: enabled && !!id,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -39,8 +48,11 @@ export const useTask = (id: string, enabled: boolean = true) => {
 }
 
 export const useTaskStats = () => {
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
+
   return useQuery({
-    queryKey: taskKeys.stats(),
+    queryKey: [...taskKeys.stats(), tenantScope],
     queryFn: () => taskService.getTaskStats(),
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes
@@ -50,6 +62,8 @@ export const useTaskStats = () => {
 // Mutation Hooks
 export const useCreateTask = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
 
   return useMutation({
     mutationFn: (data: CreateTaskRequest) => taskService.createTask(data),
@@ -59,29 +73,35 @@ export const useCreateTask = () => {
 
       // Invalidate stats to update counts
       queryClient.invalidateQueries({ queryKey: taskKeys.stats() })
+      queryClient.invalidateQueries({ queryKey: appQueryKeys.dashboard.summary() })
 
       // Set the new task in cache
-      queryClient.setQueryData(taskKeys.detail(newTask.id), newTask)
+      queryClient.setQueryData([...taskKeys.detail(newTask.id), tenantScope], newTask)
     },
     onError: (error) => {
-      console.error('Failed to create task:', error)
+      logDevError('Failed to create task.', error)
     }
   })
 }
 
 export const useUpdateTask = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateTaskRequest }) =>
       taskService.updateTask(id, data),
     onMutate: async ({ id, data }) => {
       // Cancel outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: taskKeys.detail(id) })
+      await queryClient.cancelQueries({ queryKey: [...taskKeys.detail(id), tenantScope] })
       await queryClient.cancelQueries({ queryKey: taskKeys.lists() })
 
       // Snapshot previous values
-      const previousTask = queryClient.getQueryData<Task>(taskKeys.detail(id))
+      const previousTask = queryClient.getQueryData<Task>([
+        ...taskKeys.detail(id),
+        tenantScope,
+      ])
       const previousTaskLists = queryClient.getQueriesData({ queryKey: taskKeys.lists() })
 
       // Optimistically update task detail
@@ -98,7 +118,7 @@ export const useUpdateTask = () => {
             : {})
         }
 
-        queryClient.setQueryData(taskKeys.detail(id), optimisticTask)
+        queryClient.setQueryData([...taskKeys.detail(id), tenantScope], optimisticTask)
 
         // Update task in all lists that contain it
         previousTaskLists.forEach(([queryKey, data]) => {
@@ -120,7 +140,10 @@ export const useUpdateTask = () => {
     onError: (error, variables, context) => {
       // Rollback on error
       if (context?.previousTask) {
-        queryClient.setQueryData(taskKeys.detail(variables.id), context.previousTask)
+        queryClient.setQueryData(
+          [...taskKeys.detail(variables.id), tenantScope],
+          context.previousTask,
+        )
       }
 
       if (context?.previousTaskLists) {
@@ -129,14 +152,15 @@ export const useUpdateTask = () => {
         })
       }
 
-      console.error('Failed to update task:', error)
+      logDevError('Failed to update task.', error)
     },
     onSuccess: (updatedTask) => {
       // Update task detail cache
-      queryClient.setQueryData(taskKeys.detail(updatedTask.id), updatedTask)
+      queryClient.setQueryData([...taskKeys.detail(updatedTask.id), tenantScope], updatedTask)
 
       // Invalidate and refetch stats to update counts
       queryClient.invalidateQueries({ queryKey: taskKeys.stats() })
+      queryClient.invalidateQueries({ queryKey: appQueryKeys.dashboard.summary() })
     },
     onSettled: (_data, _error, variables) => {
       // Always refetch task details after mutation settles
@@ -147,6 +171,8 @@ export const useUpdateTask = () => {
 
 export const useDeleteTask = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
 
   return useMutation({
     mutationFn: (id: string) => taskService.deleteTask(id),
@@ -165,7 +191,7 @@ export const useDeleteTask = () => {
           queryClient.setQueryData(queryKey, {
             ...listData,
             tasks: filteredTasks,
-            totalCount: listData.totalCount - 1
+            totalCount: Math.max(0, listData.totalCount - 1)
           })
         }
       })
@@ -180,14 +206,15 @@ export const useDeleteTask = () => {
         })
       }
 
-      console.error('Failed to delete task:', error)
+      logDevError('Failed to delete task.', error)
     },
     onSuccess: (_, id) => {
       // Remove task from cache
-      queryClient.removeQueries({ queryKey: taskKeys.detail(id) })
+      queryClient.removeQueries({ queryKey: [...taskKeys.detail(id), tenantScope] })
 
       // Invalidate stats to update counts
       queryClient.invalidateQueries({ queryKey: taskKeys.stats() })
+      queryClient.invalidateQueries({ queryKey: appQueryKeys.dashboard.summary() })
     },
     onSettled: () => {
       // Refetch task lists to ensure consistency
@@ -205,17 +232,21 @@ export const useBulkUpdateStatus = () => {
     onSuccess: () => {
       // Invalidate all task-related queries for bulk updates
       queryClient.invalidateQueries({ queryKey: taskKeys.all })
+      queryClient.invalidateQueries({ queryKey: appQueryKeys.dashboard.summary() })
     },
     onError: (error) => {
-      console.error('Failed to bulk update tasks:', error)
+      logDevError('Failed to bulk update tasks.', error)
     }
   })
 }
 
 // Utility hooks
 export const useTasksInfinite = (baseQuery: GetTasksQuery = {}) => {
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
+
   return useInfiniteQuery({
-    queryKey: [...taskKeys.lists(), 'infinite', baseQuery],
+    queryKey: [...taskKeys.lists(), 'infinite', baseQuery, tenantScope],
     queryFn: async ({ pageParam = 1 }) => {
       const query = { ...baseQuery, page: pageParam as number }
       return taskService.getTasks(query)
@@ -231,10 +262,12 @@ export const useTasksInfinite = (baseQuery: GetTasksQuery = {}) => {
 // Helper function to prefetch task detail
 export const usePrefetchTask = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
 
   return (id: string) => {
     queryClient.prefetchQuery({
-      queryKey: taskKeys.detail(id),
+      queryKey: [...taskKeys.detail(id), tenantScope],
       queryFn: () => taskService.getTaskById(id),
       staleTime: 1000 * 60 * 5,
     })

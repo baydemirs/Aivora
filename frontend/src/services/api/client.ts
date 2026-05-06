@@ -1,10 +1,10 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios'
 import { storage } from '@/utils/storage'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+import { env } from '@/config/env'
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: env.apiUrl,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,8 +13,12 @@ export const apiClient: AxiosInstance = axios.create({
 // Request interceptor - add auth token
 apiClient.interceptors.request.use(
   (config) => {
+    const requestUrl = config.url || ''
+    const isAuthBootstrapRequest =
+      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register')
+
     const token = storage.getToken()
-    if (token) {
+    if (token && !isAuthBootstrapRequest) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
@@ -26,9 +30,10 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const hasActiveSession = Boolean(storage.getToken())
+    if (error.response?.status === 401 && hasActiveSession) {
       storage.clear()
-      window.location.href = '/login'
+      window.dispatchEvent(new CustomEvent('aivora:unauthorized'))
     }
     return Promise.reject(error)
   }

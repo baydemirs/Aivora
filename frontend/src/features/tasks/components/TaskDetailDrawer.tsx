@@ -128,7 +128,7 @@ export function TaskDetailDrawer({
       <SheetContent className="sm:max-w-[500px] overflow-y-auto">
         <SheetHeader>
           <div className="flex items-start justify-between">
-            <SheetTitle className="text-lg font-semibold leading-6 pr-8">
+            <SheetTitle className="pr-8 text-lg font-semibold leading-6 break-words">
               {task.title}
             </SheetTitle>
             <div className="flex items-center gap-1 ml-auto">

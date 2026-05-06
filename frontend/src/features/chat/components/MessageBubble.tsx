@@ -51,7 +51,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               : 'rounded-tl-md bg-muted/80 border border-border/40'
           }`}
         >
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">
+          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
             {message.content}
           </div>
         </div>
