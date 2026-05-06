@@ -70,7 +70,7 @@ export function ConversationList({
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search conversations…"
+            placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-9 pl-8 text-sm rounded-lg"
@@ -106,3 +106,4 @@ export function ConversationList({
     </div>
   )
 }
+

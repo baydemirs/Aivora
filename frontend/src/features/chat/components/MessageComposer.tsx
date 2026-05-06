@@ -13,13 +13,12 @@ export function MessageComposer({
   onSend,
   disabled = false,
   isSending = false,
-  placeholder = 'Type your message…',
+  placeholder = 'Type your message...',
 }: MessageComposerProps) {
   const [content, setContent] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const sendingRef = useRef(false)
 
-  // Focus textarea on mount
   useEffect(() => {
     textareaRef.current?.focus()
   }, [])
@@ -27,10 +26,11 @@ export function MessageComposer({
   const handleSend = useCallback(() => {
     const trimmed = content.trim()
     if (!trimmed || disabled || isSending || sendingRef.current) return
+
     sendingRef.current = true
     onSend(trimmed)
     setContent('')
-    // Re-focus after send and reset guard
+
     setTimeout(() => {
       textareaRef.current?.focus()
       sendingRef.current = false
@@ -65,6 +65,7 @@ export function MessageComposer({
           disabled={!canSend}
           size="sm"
           className="h-10 w-10 shrink-0 rounded-xl p-0"
+          aria-label="Send message"
         >
           {isSending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -73,8 +74,8 @@ export function MessageComposer({
           )}
         </Button>
       </div>
-      <p className="mt-1.5 text-[11px] text-muted-foreground/60 px-1">
-        Press Enter to send · Shift+Enter for new line
+      <p className="mt-1.5 px-1 text-[11px] text-muted-foreground/60">
+        Press Enter to send | Shift+Enter for new line
       </p>
     </div>
   )

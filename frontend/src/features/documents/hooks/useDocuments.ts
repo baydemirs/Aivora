@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { documentService } from '../services/documents.service'
+import { appQueryKeys } from '@/lib/query-keys'
+import { useAuth } from '@/features/auth/auth-context'
+import { logDevError } from '@/lib/logger'
 import type {
   GetDocumentsQuery,
   GetDocumentsResponse,
@@ -7,18 +10,22 @@ import type {
 
 // Query keys
 export const documentKeys = {
-  all: ['documents'] as const,
-  lists: () => [...documentKeys.all, 'list'] as const,
-  list: (query: GetDocumentsQuery) => [...documentKeys.lists(), query] as const,
-  details: () => [...documentKeys.all, 'detail'] as const,
-  detail: (id: string) => [...documentKeys.details(), id] as const,
-  stats: () => [...documentKeys.all, 'stats'] as const,
+  all: appQueryKeys.documents.all,
+  lists: appQueryKeys.documents.lists,
+  list: (query: GetDocumentsQuery) =>
+    appQueryKeys.documents.list(query as unknown as Record<string, unknown>),
+  details: appQueryKeys.documents.details,
+  detail: appQueryKeys.documents.detail,
+  stats: appQueryKeys.documents.stats,
 }
 
 // Query Hooks
 export const useDocuments = (query: GetDocumentsQuery = {}) => {
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
+
   return useQuery({
-    queryKey: documentKeys.list(query),
+    queryKey: [...documentKeys.list(query), tenantScope],
     queryFn: () => documentService.getDocuments(query),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
@@ -26,8 +33,11 @@ export const useDocuments = (query: GetDocumentsQuery = {}) => {
 }
 
 export const useDocument = (id: string, enabled: boolean = true) => {
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
+
   return useQuery({
-    queryKey: documentKeys.detail(id),
+    queryKey: [...documentKeys.detail(id), tenantScope],
     queryFn: () => documentService.getDocumentById(id),
     enabled: enabled && !!id,
     staleTime: 1000 * 60 * 5,
@@ -35,8 +45,11 @@ export const useDocument = (id: string, enabled: boolean = true) => {
 }
 
 export const useDocumentStats = () => {
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
+
   return useQuery({
-    queryKey: documentKeys.stats(),
+    queryKey: [...documentKeys.stats(), tenantScope],
     queryFn: () => documentService.getDocumentStats(),
     staleTime: 1000 * 60 * 2,
     gcTime: 1000 * 60 * 5,
@@ -46,6 +59,8 @@ export const useDocumentStats = () => {
 // Mutation Hooks
 export const useUploadDocument = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
 
   return useMutation({
     mutationFn: (file: File) => documentService.uploadDocument(file),
@@ -55,18 +70,21 @@ export const useUploadDocument = () => {
 
       // Invalidate stats to update counts
       queryClient.invalidateQueries({ queryKey: documentKeys.stats() })
+      queryClient.invalidateQueries({ queryKey: appQueryKeys.dashboard.summary() })
 
       // Set the new document in cache
-      queryClient.setQueryData(documentKeys.detail(newDoc.id), newDoc)
+      queryClient.setQueryData([...documentKeys.detail(newDoc.id), tenantScope], newDoc)
     },
     onError: (error) => {
-      console.error('Failed to upload document:', error)
+      logDevError('Failed to upload document.', error)
     },
   })
 }
 
 export const useDeleteDocument = () => {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const tenantScope = user?.tenantId || 'anonymous'
 
   return useMutation({
     mutationFn: (id: string) => documentService.deleteDocument(id),
@@ -87,7 +105,7 @@ export const useDeleteDocument = () => {
           queryClient.setQueryData(queryKey, {
             ...listData,
             documents: filtered,
-            totalCount: listData.totalCount - 1,
+            totalCount: Math.max(0, listData.totalCount - 1),
           })
         }
       })
@@ -102,14 +120,15 @@ export const useDeleteDocument = () => {
         })
       }
 
-      console.error('Failed to delete document:', _error)
+      logDevError('Failed to delete document.', _error)
     },
     onSuccess: (_, id) => {
       // Remove document from cache
-      queryClient.removeQueries({ queryKey: documentKeys.detail(id) })
+      queryClient.removeQueries({ queryKey: [...documentKeys.detail(id), tenantScope] })
 
       // Invalidate stats to update counts
       queryClient.invalidateQueries({ queryKey: documentKeys.stats() })
+      queryClient.invalidateQueries({ queryKey: appQueryKeys.dashboard.summary() })
     },
     onSettled: () => {
       // Refetch document lists to ensure consistency
