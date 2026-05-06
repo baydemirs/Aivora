@@ -1,14 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle, Skeleton } from '@/components/ui'
 import { useAuth } from '@/features/auth/auth-context'
 import { useTaskStats } from '@/features/tasks/hooks/useTasks'
+import { useDashboardSummary } from '@/features/dashboard/hooks/useDashboardSummary'
 import { ListTodo, FileText, MessageSquare, CheckCircle, Clock, Building2, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
-// Mock data for non-task stats - will be replaced with API calls
-const mockOtherStats = {
-  totalDocuments: 12,
-  totalConversations: 45,
-}
 
 interface StatCardProps {
   title: string
@@ -22,11 +17,9 @@ interface StatCardProps {
 
 function StatCard({ title, value, description, icon: Icon, loading, to }: StatCardProps) {
   const content = (
-    <Card className={to ? "cursor-pointer transition-colors hover:bg-muted/50" : ""}>
+    <Card className={to ? 'cursor-pointer transition-colors hover:bg-muted/50' : ''}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
@@ -38,9 +31,7 @@ function StatCard({ title, value, description, icon: Icon, loading, to }: StatCa
         ) : (
           <>
             <div className="text-2xl font-bold">{value}</div>
-            {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
-            )}
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
           </>
         )}
       </CardContent>
@@ -53,45 +44,49 @@ function StatCard({ title, value, description, icon: Icon, loading, to }: StatCa
 export function DashboardPage() {
   const { user } = useAuth()
 
-  // Get real task stats from our API
   const {
     data: taskStats,
     isLoading: isTaskStatsLoading,
-    error: taskStatsError
+    error: taskStatsError,
   } = useTaskStats()
 
-  // Calculate derived stats
-  const totalActiveTasks = taskStats ?
-    taskStats.todo + taskStats.inProgress + taskStats.blocked + taskStats.review : 0
+  const {
+    data: summary,
+    isLoading: isSummaryLoading,
+    error: summaryError,
+  } = useDashboardSummary()
+
+  const totalActiveTasks = taskStats
+    ? taskStats.todo + taskStats.inProgress + taskStats.blocked + taskStats.review
+    : 0
+
+  const tenantDisplayName = summary?.tenantName || user?.tenantName || 'Your Organization'
+  const tenantDisplayId = summary?.tenantId || user?.tenantId || ''
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight">
           Welcome back{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}!
         </h2>
-        <p className="text-muted-foreground">
-          Here's an overview of your AI platform activity.
-        </p>
+        <p className="text-muted-foreground">Here's an overview of your AI platform activity.</p>
       </div>
 
-      {/* Tenant Info */}
       <Card>
         <CardHeader className="flex flex-row items-center gap-4 pb-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
             <Building2 className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-base">{user?.tenantName || 'Your Organization'}</CardTitle>
+            <CardTitle className="text-base">{tenantDisplayName}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {user?.role === 'ADMIN' ? 'Administrator' : 'Member'} • Tenant ID: {user?.tenantId ? `${user.tenantId.slice(0, 8)}...` : 'N/A'}
+              {user?.role === 'ADMIN' ? 'Administrator' : 'Member'} - Tenant ID:{' '}
+              {tenantDisplayId ? `${tenantDisplayId.slice(0, 8)}...` : 'N/A'}
             </p>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Primary Task Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Tasks"
@@ -127,7 +122,6 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Task Status Breakdown */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Task Status Breakdown</CardTitle>
@@ -143,9 +137,7 @@ export function DashboardPage() {
               ))}
             </div>
           ) : taskStatsError ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Failed to load task statistics
-            </p>
+            <p className="py-4 text-center text-sm text-muted-foreground">Failed to load task statistics</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-5">
               <div className="text-center">
@@ -173,31 +165,31 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Secondary Stats and Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           title="Documents"
-          value={mockOtherStats.totalDocuments}
+          value={summary?.totalDocuments ?? 0}
           description="In knowledge base"
           icon={FileText}
+          loading={isSummaryLoading}
           to="/knowledge-base"
         />
         <StatCard
           title="AI Conversations"
-          value={mockOtherStats.totalConversations}
+          value={summary?.totalConversations ?? 0}
           description="Total chat sessions"
           icon={MessageSquare}
+          loading={isSummaryLoading}
           to="/chat"
         />
 
-        {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Link
-              to="/prd-tracker"
+              to="/tasks"
               className="flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors hover:bg-muted"
             >
               <ListTodo className="h-4 w-4" />
@@ -221,7 +213,12 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Priority Breakdown */}
+      {summaryError && (
+        <p className="text-center text-sm text-muted-foreground">
+          Some dashboard totals are temporarily unavailable.
+        </p>
+      )}
+
       {taskStats && taskStats.byPriority && (
         <Card>
           <CardHeader>

@@ -4,6 +4,7 @@ import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Card
 import { useAuth } from '@/features/auth/auth-context'
 import { authService } from '@/services/auth/auth.service'
 import { validators, validateForm } from '@/utils/validation'
+import { toPublicErrorMessage } from '@/lib/errors'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 type LoginFormData = {
@@ -39,6 +40,7 @@ export function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     setApiError('')
 
     // Validate form
@@ -58,11 +60,7 @@ export function LoginPage() {
       login(response.accessToken, response.user)
       navigate('/dashboard')
     } catch (err) {
-      if (err instanceof Error) {
-        setApiError(err.message || 'Invalid email or password')
-      } else {
-        setApiError('An error occurred. Please try again.')
-      }
+      setApiError(toPublicErrorMessage(err, 'Sign-in failed. Please try again.'))
     } finally {
       setIsLoading(false)
     }
@@ -133,7 +131,7 @@ export function LoginPage() {
             <button
               type="button"
               className="text-primary hover:underline"
-              onClick={() => alert('Password reset not implemented yet')}
+              onClick={() => setApiError('Password reset is currently unavailable. Please contact your administrator.')}
             >
               Forgot password?
             </button>
