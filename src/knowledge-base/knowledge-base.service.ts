@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
 import { v4 as uuidv4 } from 'uuid';
@@ -129,6 +134,20 @@ export class KnowledgeBaseService {
       where: { tenantId },
       include: { _count: { select: { chunks: true } } },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteDocument(documentId: string, tenantId: string) {
+    const document = await this.prisma.document.findFirst({
+      where: { id: documentId, tenantId },
+    });
+
+    if (!document) {
+      throw new NotFoundException('Document not found or access denied');
+    }
+
+    await this.prisma.document.delete({
+      where: { id: documentId },
     });
   }
 

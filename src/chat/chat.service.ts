@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { RagResponse, RagService } from '../rag/rag.service';
+import { CreateConversationDto } from './dto/create-conversation.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 
 @Injectable()
@@ -11,6 +12,16 @@ export class ChatService {
     private readonly prisma: PrismaService,
     private readonly ragService: RagService,
   ) {}
+
+  async createConversation(dto: CreateConversationDto, tenantId: string) {
+    return this.prisma.conversation.create({
+      data: {
+        tenantId,
+        title: dto.title?.trim() || 'New Chat',
+      },
+      include: { _count: { select: { messages: true } } },
+    });
+  }
 
   async sendMessage(dto: SendMessageDto, tenantId: string) {
     // 1. Get or create conversation
@@ -52,7 +63,7 @@ export class ChatService {
     }
 
     // 3. Save both messages atomically — either both persist or neither
-    await this.prisma.$transaction([
+    const [userMessage, assistantMessage] = await this.prisma.$transaction([
       this.prisma.message.create({
         data: {
           conversationId,
@@ -75,6 +86,8 @@ export class ChatService {
       confidence: ragResponse.confidence,
       sourcesCount: ragResponse.sourcesCount,
       taskCreated: ragResponse.taskCreated,
+      userMessage,
+      assistantMessage,
     };
   }
 
@@ -98,6 +111,20 @@ export class ChatService {
       where: { tenantId },
       include: { _count: { select: { messages: true } } },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async deleteConversation(conversationId: string, tenantId: string) {
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id: conversationId, tenantId },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found or access denied');
+    }
+
+    await this.prisma.conversation.delete({
+      where: { id: conversationId },
     });
   }
 }

@@ -1,11 +1,11 @@
 // Task Domain Types
 
 export const TaskStatus = {
-  TODO: 'todo',
-  IN_PROGRESS: 'in_progress',
-  BLOCKED: 'blocked',
-  REVIEW: 'review',
-  DONE: 'done',
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  BLOCKED: 'BLOCKED',
+  REVIEW: 'REVIEW',
+  DONE: 'DONE',
 } as const;
 
 export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
