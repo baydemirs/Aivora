@@ -13,6 +13,7 @@ import { QdrantModule } from './qdrant/qdrant.module';
 import { RagModule } from './rag/rag.module';
 import { ChatModule } from './chat/chat.module';
 import { TenantModule } from './tenant/tenant.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TenantModule } from './tenant/tenant.module';
     KnowledgeBaseModule,
     RagModule,
     ChatModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -37,6 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthState({ token: null, user: null })
   }, [])
 
+  const updateUser = useCallback((updates: Partial<User>) => {
+    setAuthState((current) => {
+      if (!current.user) return current
+
+      const nextUser = { ...current.user, ...updates }
+      storage.setUser(nextUser)
+      return { ...current, user: nextUser }
+    })
+  }, [])
+
   const value = useMemo(
     () => ({
       user: authState.user,
@@ -45,8 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       login,
       logout,
+      updateUser,
     }),
-    [authState.token, authState.user, login, logout],
+    [authState.token, authState.user, login, logout, updateUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

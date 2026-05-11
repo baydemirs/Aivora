@@ -119,9 +119,13 @@ function buildStats(tasks: Task[]): TaskStats {
 }
 
 class ApiTaskService {
-  async getTasks(query: GetTasksQuery = {}): Promise<GetTasksResponse> {
+  private async fetchAllTasks(): Promise<Task[]> {
     const response = await apiClient.get<ApiTask[]>('/prd')
-    const tasks = response.data.map(toTask)
+    return response.data.map(toTask)
+  }
+
+  async getTasks(query: GetTasksQuery = {}): Promise<GetTasksResponse> {
+    const tasks = await this.fetchAllTasks()
     return paginateTasks(sortTasks(applyFilters(tasks, query), query), query)
   }
 
@@ -131,11 +135,19 @@ class ApiTaskService {
   }
 
   async createTask(data: CreateTaskRequest): Promise<Task> {
+    // Backend create DTO accepts title/module only; extra form fields are rejected.
     const response = await apiClient.post<ApiTask>('/prd', {
-      title: data.title,
+      title: data.title.trim(),
       module: data.module,
     })
-    return toTask(response.data)
+
+    const createdTask = toTask(response.data)
+
+    if (data.status && data.status !== createdTask.status) {
+      return this.updateTask(createdTask.id, { status: data.status })
+    }
+
+    return createdTask
   }
 
   async updateTask(id: string, data: UpdateTaskRequest): Promise<Task> {
@@ -157,8 +169,7 @@ class ApiTaskService {
   }
 
   async getTaskStats(): Promise<TaskStats> {
-    const response = await this.getTasks()
-    return buildStats(response.tasks)
+    return buildStats(await this.fetchAllTasks())
   }
 
   async bulkUpdateStatus(taskIds: string[], status: TaskStatus): Promise<Task[]> {

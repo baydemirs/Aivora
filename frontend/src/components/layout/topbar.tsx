@@ -1,4 +1,4 @@
-import { Menu, User, LogOut, ChevronDown, Globe } from 'lucide-react'
+import { Menu, LogOut, ChevronDown, Globe } from 'lucide-react'
 import { Button, Avatar, AvatarFallback } from '@/components/ui'
 import { useAuth } from '@/features/auth/use-auth'
 import { getInitials } from '@/utils/format'
@@ -102,15 +102,6 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                   )}
                 </div>
                 <div className="p-1.5">
-                  <button
-                    onClick={() => {
-                      setIsDropdownOpen(false)
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted/60"
-                  >
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    {t('topbar.profileSettings')}
-                  </button>
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false)
