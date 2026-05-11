@@ -1,6 +1,9 @@
 import {
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  Param,
   Post,
   UploadedFile,
   UseGuards,
@@ -42,5 +45,14 @@ export class KnowledgeBaseController {
   @Get()
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.knowledgeBaseService.findAll(user.tenantId);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.knowledgeBaseService.deleteDocument(id, user.tenantId);
   }
 }

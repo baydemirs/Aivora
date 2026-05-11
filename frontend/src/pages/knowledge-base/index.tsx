@@ -58,8 +58,6 @@ export function KnowledgeBasePage() {
   }
 
   const handleUpload = async (files: File[]) => {
-    // In a real app we would upload sequentially or in parallel
-    // Since this is mock with delay, we'll just trigger them all and let React Query handle optimistic UI
     files.forEach(file => {
       uploadMutation.mutate(file)
     })

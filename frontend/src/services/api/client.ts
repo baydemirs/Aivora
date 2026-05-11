@@ -5,9 +5,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 // Request interceptor - add auth token
@@ -30,7 +27,15 @@ apiClient.interceptors.response.use(
       storage.clear()
       window.location.href = '/login'
     }
-    return Promise.reject(error)
+
+    const data = error.response?.data as
+      | { message?: string | string[]; error?: string }
+      | undefined
+    const message = Array.isArray(data?.message)
+      ? data.message.join(', ')
+      : data?.message || data?.error || error.message || 'Request failed'
+
+    return Promise.reject(new Error(message))
   }
 )
 

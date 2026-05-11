@@ -17,7 +17,7 @@ import {
 } from '@/features/chat/components'
 
 export function ChatPage() {
-  const [activeConversationId, setActiveConversationId] = useState<string | null>('conv-1')
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [mobileListOpen, setMobileListOpen] = useState(false)
 
@@ -25,13 +25,6 @@ export function ChatPage() {
   const { data: conversationsData, isLoading: isLoadingConversations } = useConversations({
     search: searchQuery || undefined,
   })
-  const { data: messages, isLoading: isLoadingMessages } = useMessages(activeConversationId)
-
-  // Mutations
-  const sendMessageMutation = useSendMessage()
-  const createConversationMutation = useCreateConversation()
-  const deleteConversationMutation = useDeleteConversation()
-
   const conversations = useMemo(
     () => conversationsData?.conversations ?? [],
     [conversationsData?.conversations],
@@ -40,6 +33,15 @@ export function ChatPage() {
     () => conversations.find((c) => c.id === activeConversationId) ?? null,
     [activeConversationId, conversations],
   )
+  const displayedConversationId = activeConversationId ?? conversations[0]?.id ?? null
+  const displayedConversation = activeConversation ?? conversations[0] ?? null
+
+  const { data: messages, isLoading: isLoadingMessages } = useMessages(displayedConversationId)
+
+  // Mutations
+  const sendMessageMutation = useSendMessage()
+  const createConversationMutation = useCreateConversation()
+  const deleteConversationMutation = useDeleteConversation()
 
   // Handlers
   const handleSelectConversation = useCallback(
@@ -62,34 +64,34 @@ export function ChatPage() {
 
   const handleSendMessage = useCallback(
     (content: string) => {
-      if (!activeConversationId || !content.trim()) return
+      if (!displayedConversationId || !content.trim()) return
       sendMessageMutation.mutate({
-        conversationId: activeConversationId,
+        conversationId: displayedConversationId,
         content,
       })
     },
-    [activeConversationId, sendMessageMutation],
+    [displayedConversationId, sendMessageMutation],
   )
 
   const handleDeleteConversation = useCallback(async () => {
-    if (!activeConversationId) return
+    if (!displayedConversationId) return
     const confirmed = window.confirm('Are you sure you want to delete this conversation?')
     if (!confirmed) return
     try {
-      await deleteConversationMutation.mutateAsync(activeConversationId)
+      await deleteConversationMutation.mutateAsync(displayedConversationId)
       // Select another conversation or clear
-      const remaining = conversations.filter((c) => c.id !== activeConversationId)
+      const remaining = conversations.filter((c) => c.id !== displayedConversationId)
       setActiveConversationId(remaining.length > 0 ? remaining[0].id : null)
     } catch (error) {
       console.error('Failed to delete conversation:', error)
     }
-  }, [activeConversationId, conversations, deleteConversationMutation])
+  }, [displayedConversationId, conversations, deleteConversationMutation])
 
   // Shared sidebar content
   const sidebarContent = (
     <ConversationList
       conversations={conversations}
-      activeId={activeConversationId}
+      activeId={displayedConversationId}
       onSelect={handleSelectConversation}
       onNewConversation={handleNewConversation}
       isLoading={isLoadingConversations}
@@ -115,7 +117,7 @@ export function ChatPage() {
 
       {/* Chat Area */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-        {activeConversationId ? (
+        {displayedConversationId ? (
           <>
             {/* Header with mobile menu trigger */}
             <div className="flex items-center">
@@ -129,7 +131,7 @@ export function ChatPage() {
               </Button>
               <div className="flex-1">
                 <ChatHeader
-                  conversation={activeConversation}
+                  conversation={displayedConversation}
                   messageCount={messages?.length || 0}
                   onDelete={handleDeleteConversation}
                   isDeleting={deleteConversationMutation.isPending}

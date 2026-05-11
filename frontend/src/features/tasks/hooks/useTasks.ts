@@ -135,7 +135,25 @@ export const useUpdateTask = () => {
       // Update task detail cache
       queryClient.setQueryData(taskKeys.detail(updatedTask.id), updatedTask)
 
-      // Invalidate and refetch stats to update counts
+      queryClient.setQueriesData(
+        { queryKey: taskKeys.lists() },
+        (oldData: unknown) => {
+          if (!oldData || typeof oldData !== 'object' || !('tasks' in oldData)) {
+            return oldData
+          }
+
+          const listData = oldData as GetTasksResponse
+          return {
+            ...listData,
+            tasks: listData.tasks.map((task) =>
+              task.id === updatedTask.id ? updatedTask : task,
+            ),
+          }
+        },
+      )
+
+      // Invalidate and refetch lists/stats so backend remains source of truth
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       queryClient.invalidateQueries({ queryKey: taskKeys.stats() })
     },
     onSettled: (_data, _error, variables) => {

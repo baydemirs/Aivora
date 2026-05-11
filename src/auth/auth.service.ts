@@ -53,18 +53,17 @@ export class AuthService {
           role: true,
           tenantId: true,
           createdAt: true,
+          updatedAt: true,
+          tenant: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
     });
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      tenantId: user.tenantId,
-    };
-
-    return { access_token: this.jwtService.sign(payload) };
+    return this.buildAuthResponse(user);
   }
 
   async login(loginDto: LoginDto) {
@@ -72,6 +71,13 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { email },
+      include: {
+        tenant: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -84,6 +90,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    return this.buildAuthResponse(user);
+  }
+
+  private buildAuthResponse(user: {
+    id: string;
+    email: string;
+    role: Role;
+    tenantId: string;
+    createdAt: Date;
+    updatedAt?: Date;
+    tenant?: { name: string };
+  }) {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
@@ -91,6 +109,18 @@ export class AuthService {
       tenantId: user.tenantId,
     };
 
-    return { access_token: this.jwtService.sign(payload) };
+    return {
+      accessToken: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.email.split('@')[0],
+        role: user.role,
+        tenantId: user.tenantId,
+        tenantName: user.tenant?.name ?? '',
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt ?? user.createdAt,
+      },
+    };
   }
 }

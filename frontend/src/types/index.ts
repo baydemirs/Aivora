@@ -49,7 +49,7 @@ export interface Tenant {
 }
 
 // PRD Task Types
-export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'REVIEW' | 'DONE'
 
 export interface PrdTask {
   id: string
