@@ -8,6 +8,7 @@ export interface AuthContextType {
   isLoading: boolean
   login: (token: string, user: User) => void
   logout: () => void
+  updateUser: (updates: Partial<User>) => void
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)

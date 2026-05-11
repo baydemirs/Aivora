@@ -93,6 +93,7 @@ export type TaskSortBy = typeof TaskSortBy[keyof typeof TaskSortBy];
 export interface CreateTaskRequest {
   title: string
   description?: string
+  status?: TaskStatus
   priority: TaskPriority
   module: string
   assigneeId?: string

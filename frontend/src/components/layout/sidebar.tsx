@@ -1,16 +1,17 @@
 import { NavLink } from 'react-router-dom'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
   ListTodo,
   FileText,
   MessageSquare,
-  Settings,
   LogOut,
   Sparkles,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
 import { Avatar, AvatarFallback } from '@/components/ui'
+import { SettingsPanel, SettingsTrigger } from '@/components/settings'
 import { getInitials } from '@/utils/format'
 import { useI18n } from '@/i18n'
 
@@ -44,6 +45,7 @@ interface SidebarProps {
 export function Sidebar({ onNavigate }: SidebarProps) {
   const { user, logout } = useAuth()
   const { t } = useI18n()
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const handleNavClick = () => {
     onNavigate?.()
@@ -89,32 +91,44 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-              {getInitials(user?.fullName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">{user?.fullName || user?.email}</p>
-            <p className="truncate text-xs text-muted-foreground">{user?.role}</p>
+        <div className="rounded-xl border border-border/70 bg-background/70 p-2 shadow-sm">
+          <div className="flex items-center gap-3 px-2 py-2">
+            <Avatar className="h-9 w-9 rounded-lg">
+              <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+                {getInitials(user?.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm font-semibold leading-5 text-foreground">{user?.fullName || user?.email}</p>
+              <p className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
+                {user?.role === 'ADMIN' ? t('settings.roleAdmin') : t('settings.roleMember')}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-2">
+            <SettingsTrigger
+              active={settingsOpen}
+              onClick={() => setSettingsOpen(true)}
+            />
           </div>
         </div>
-        <div className="flex gap-1 mt-1">
-          <button
-            className="flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
-          >
-            <Settings className="h-3.5 w-3.5" />
-            {t('common.settings')}
-          </button>
-          <button
-            onClick={logout}
-            className="flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            {t('common.logout')}
-          </button>
-        </div>
+
+        <button
+          type="button"
+          onClick={logout}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          {t('common.logout')}
+        </button>
+
+        <SettingsPanel
+          open={settingsOpen}
+          user={user}
+          onOpenChange={setSettingsOpen}
+          onLogout={logout}
+        />
       </div>
     </div>
   )

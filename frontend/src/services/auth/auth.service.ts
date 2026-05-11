@@ -28,6 +28,7 @@ export const authService = {
     const response = await apiClient.post<BackendAuthResponse>('/auth/register', {
       email: data.email,
       password: data.password,
+      fullName: data.fullName,
       name: data.tenantName,
     })
     return normalizeAuthResponse(response.data)

@@ -16,6 +16,17 @@ enum Role {
   USER
 }
 
+enum ThemePreference {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum SettingsLanguage {
+  EN
+  TR
+}
+
 // ─── Models ─────────────────────────────────────────────
 
 model Tenant {
@@ -25,6 +36,7 @@ model Tenant {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   users         User[]
+  userSettings  UserSettings[]
   prdTasks      PrdTask[]
   documents     Document[]
   conversations Conversation[]
@@ -35,16 +47,37 @@ model Tenant {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  fullName  String?  @map("full_name")
   password  String
   role      Role     @default(USER)
   tenantId  String   @map("tenant_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  settings UserSettings?
 
   @@index([tenantId])
   @@map("users")
+}
+
+model UserSettings {
+  id                 String           @id @default(uuid())
+  userId             String           @unique @map("user_id")
+  tenantId           String           @map("tenant_id")
+  themePreference    ThemePreference  @default(SYSTEM) @map("theme_preference")
+  language           SettingsLanguage @default(TR)
+  timezone           String           @default("Europe/Istanbul")
+  emailNotifications Boolean          @default(true) @map("email_notifications")
+  inAppNotifications Boolean          @default(true) @map("in_app_notifications")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("user_settings")
 }
 
 // ─── PRD Tracker ────────────────────────────────────────

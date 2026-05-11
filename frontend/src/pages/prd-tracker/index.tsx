@@ -1,22 +1,25 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, Button, Skeleton } from '@/components/ui'
 import { PageHeader } from '@/components/shared'
-import { Plus, RotateCcw, Download } from 'lucide-react'
+import { CheckCircle2, Download, Loader2, Plus, RefreshCw } from 'lucide-react'
 
 // Task components and hooks
 import {
   TaskTable,
   TaskFilters,
-  TaskDetailDrawer
+  TaskDetailDrawer,
+  CreateTaskDialog
 } from '@/features/tasks/components'
 import {
   useTasks,
   useTaskStats,
+  useCreateTask,
   useUpdateTask
 } from '@/features/tasks/hooks/useTasks'
 import type {
   Task,
   TaskFilters as TaskFiltersType,
+  CreateTaskRequest,
   GetTasksQuery,
 } from '@/features/tasks/types'
 import { TaskSortBy, TaskStatus } from '@/features/tasks/types'
@@ -37,7 +40,11 @@ export function PrdTrackerPage() {
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null)
 
   // Prepare query parameters for API
   const queryParams = useMemo((): GetTasksQuery => {
@@ -56,6 +63,7 @@ export function PrdTrackerPage() {
   const {
     data: tasksResponse,
     isLoading: isTasksLoading,
+    isFetching: isTasksFetching,
     error: tasksError,
     refetch: refetchTasks
   } = useTasks(queryParams)
@@ -63,9 +71,11 @@ export function PrdTrackerPage() {
   const {
     data: taskStats,
     isLoading: isStatsLoading,
+    isFetching: isStatsFetching,
     refetch: refetchStats
   } = useTaskStats()
 
+  const createTaskMutation = useCreateTask()
   const updateTaskMutation = useUpdateTask()
 
   // Handlers
@@ -96,9 +106,28 @@ export function PrdTrackerPage() {
     )
   }
 
-  const handleRefresh = () => {
-    refetchTasks()
-    refetchStats()
+  const handleRefresh = async () => {
+    if (isRefreshing) return
+
+    try {
+      setIsRefreshing(true)
+      setRefreshError(null)
+      await Promise.all([
+        refetchTasks({ throwOnError: true }),
+        refetchStats({ throwOnError: true })
+      ])
+      setLastRefreshedAt(new Date())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('tasks.refreshFailed')
+      setRefreshError(message)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  const handleCreateTask = async (data: CreateTaskRequest) => {
+    await createTaskMutation.mutateAsync(data)
+    setLastRefreshedAt(new Date())
   }
 
   const handleFiltersReset = () => {
@@ -127,6 +156,8 @@ export function PrdTrackerPage() {
   }
 
   const isLoading = isTasksLoading || isStatsLoading
+  const isPageFetching = isTasksFetching || isStatsFetching
+  const isRefreshDisabled = isRefreshing || isLoading || createTaskMutation.isPending
   const hasError = tasksError
 
   const statItems = [
@@ -141,22 +172,51 @@ export function PrdTrackerPage() {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader title={t('tasks.title')} description={t('tasks.subtitle')}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <RotateCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          {t('common.refresh')}
-        </Button>
+        <div className="flex w-full flex-col gap-2 rounded-xl border border-border/70 bg-card/80 p-1.5 shadow-sm sm:w-auto sm:flex-row sm:items-center">
+          <div className="hidden items-center gap-1.5 px-2 text-xs text-muted-foreground lg:flex">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+            <span>
+              {lastRefreshedAt
+                ? t('tasks.refreshedAt', {
+                    time: lastRefreshedAt.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }),
+                  })
+                : t('tasks.liveData')}
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshDisabled}
+            className="h-9 w-full border-border/80 bg-background/90 px-3 shadow-none hover:border-primary/30 hover:bg-primary/5 sm:w-auto"
+          >
+            {isRefreshing || (isPageFetching && !isLoading) ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {isRefreshing ? t('tasks.refreshing') : t('common.refresh')}
+          </Button>
 
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          {t('tasks.newTask')}
-        </Button>
+          <Button
+            className="h-9 w-full bg-primary px-4 shadow-md shadow-primary/20 hover:bg-primary/90 sm:w-auto"
+            onClick={() => setIsCreateDialogOpen(true)}
+            disabled={createTaskMutation.isPending}
+          >
+            <Plus className="h-4 w-4" />
+            {t('tasks.newTask')}
+          </Button>
+        </div>
       </PageHeader>
+
+      {refreshError && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {refreshError}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -298,6 +358,13 @@ export function PrdTrackerPage() {
         onStatusChange={selectedTask ? (status) => handleStatusChange(selectedTask.id, status) : undefined}
         isStatusUpdating={updateTaskMutation.isPending}
         loading={false}
+      />
+
+      <CreateTaskDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onCreateTask={handleCreateTask}
+        isSubmitting={createTaskMutation.isPending}
       />
     </div>
   )

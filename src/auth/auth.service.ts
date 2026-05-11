@@ -19,7 +19,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, name } = registerDto;
+    const { email, password, name, fullName } = registerDto;
 
     // Hash password before entering transaction (CPU-intensive work outside DB lock)
     const salt = await bcrypt.genSalt(10);
@@ -43,6 +43,7 @@ export class AuthService {
       return tx.user.create({
         data: {
           email,
+          fullName: fullName?.trim() || email.split('@')[0],
           password: hashedPassword,
           role: Role.ADMIN,
           tenantId: tenant.id,
@@ -50,6 +51,7 @@ export class AuthService {
         select: {
           id: true,
           email: true,
+          fullName: true,
           role: true,
           tenantId: true,
           createdAt: true,
@@ -96,6 +98,7 @@ export class AuthService {
   private buildAuthResponse(user: {
     id: string;
     email: string;
+    fullName?: string | null;
     role: Role;
     tenantId: string;
     createdAt: Date;
@@ -114,7 +117,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        fullName: user.email.split('@')[0],
+        fullName: user.fullName?.trim() || user.email.split('@')[0],
         role: user.role,
         tenantId: user.tenantId,
         tenantName: user.tenant?.name ?? '',

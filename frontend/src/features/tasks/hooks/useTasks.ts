@@ -53,15 +53,19 @@ export const useCreateTask = () => {
 
   return useMutation({
     mutationFn: (data: CreateTaskRequest) => taskService.createTask(data),
-    onSuccess: (newTask) => {
-      // Invalidate tasks lists to refetch with new task
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-
-      // Invalidate stats to update counts
-      queryClient.invalidateQueries({ queryKey: taskKeys.stats() })
-
-      // Set the new task in cache
+    onSuccess: async (newTask) => {
       queryClient.setQueryData(taskKeys.detail(newTask.id), newTask)
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: taskKeys.lists(),
+          refetchType: 'active',
+        }),
+        queryClient.invalidateQueries({
+          queryKey: taskKeys.stats(),
+          refetchType: 'active',
+        }),
+      ])
     },
     onError: (error) => {
       console.error('Failed to create task:', error)
