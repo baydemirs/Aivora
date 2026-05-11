@@ -7,6 +7,7 @@ import {
   useSettings,
   useUpdateSettings,
 } from '@/features/settings/hooks/useSettings'
+import { useTheme } from '@/features/theme/use-theme'
 import type {
   SettingsLanguage,
   SettingsResponse,
@@ -113,6 +114,7 @@ function getDraftFromSettings(
   settings: SettingsResponse | undefined,
   user: User | null,
   fallbackLanguage: SettingsLanguage,
+  fallbackThemePreference: ThemePreference,
 ): SettingsDraft {
   return {
     ...defaultDraft,
@@ -120,7 +122,7 @@ function getDraftFromSettings(
     email: settings?.profile.email || user?.email || '',
     tenantName: settings?.profile.tenantName || user?.tenantName || '',
     themePreference:
-      settings?.preferences.themePreference || defaultDraft.themePreference,
+      settings?.preferences.themePreference || fallbackThemePreference,
     language: settings?.preferences.language || fallbackLanguage,
     timezone: settings?.preferences.timezone || defaultDraft.timezone,
     emailNotifications:
@@ -245,6 +247,7 @@ export function SettingsTrigger({ active = false, onClick }: SettingsTriggerProp
 export function SettingsPanel({ open, user, onOpenChange, onLogout }: SettingsPanelProps) {
   const { language, setLanguage, t } = useI18n()
   const { updateUser } = useAuth()
+  const { themePreference, setThemePreference } = useTheme()
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('profile')
   const [draftOverrides, setDraftOverrides] = useState<Partial<SettingsDraft>>({})
   const [saved, setSaved] = useState(false)
@@ -253,10 +256,11 @@ export function SettingsPanel({ open, user, onOpenChange, onLogout }: SettingsPa
   const updateSettingsMutation = useUpdateSettings()
 
   const baseDraft = useMemo(
-    () => getDraftFromSettings(settingsQuery.data, user, language),
-    [settingsQuery.data, user, language],
+    () => getDraftFromSettings(settingsQuery.data, user, language, themePreference),
+    [language, settingsQuery.data, themePreference, user],
   )
   const loadedLanguage = settingsQuery.data?.preferences.language
+  const loadedThemePreference = settingsQuery.data?.preferences.themePreference
 
   useEffect(() => {
     if (
@@ -270,6 +274,25 @@ export function SettingsPanel({ open, user, onOpenChange, onLogout }: SettingsPa
 
     setLanguage(loadedLanguage)
   }, [draftOverrides.language, language, loadedLanguage, open, setLanguage])
+
+  useEffect(() => {
+    if (
+      !open ||
+      !loadedThemePreference ||
+      draftOverrides.themePreference !== undefined ||
+      loadedThemePreference === themePreference
+    ) {
+      return
+    }
+
+    setThemePreference(loadedThemePreference)
+  }, [
+    draftOverrides.themePreference,
+    loadedThemePreference,
+    open,
+    setThemePreference,
+    themePreference,
+  ])
 
   const draft = useMemo(
     () => ({ ...baseDraft, ...draftOverrides }),
@@ -299,6 +322,9 @@ export function SettingsPanel({ open, user, onOpenChange, onLogout }: SettingsPa
       setDraftOverrides({})
       setSaved(false)
       setSaveError(null)
+      if (settingsQuery.data?.preferences.themePreference) {
+        setThemePreference(settingsQuery.data.preferences.themePreference)
+      }
       updateSettingsMutation.reset()
     }
 
@@ -319,6 +345,7 @@ export function SettingsPanel({ open, user, onOpenChange, onLogout }: SettingsPa
         tenantName: settings.profile.tenantName,
       })
       setLanguage(settings.preferences.language)
+      setThemePreference(settings.preferences.themePreference)
       setDraftOverrides({})
       setSaved(true)
     } catch (error) {
@@ -518,9 +545,11 @@ export function SettingsPanel({ open, user, onOpenChange, onLogout }: SettingsPa
                       </Label>
                       <Select
                         value={draft.themePreference}
-                        onValueChange={(value) =>
-                          updateDraft('themePreference', value as ThemePreference)
-                        }
+                        onValueChange={(value) => {
+                          const nextThemePreference = value as ThemePreference
+                          updateDraft('themePreference', nextThemePreference)
+                          setThemePreference(nextThemePreference)
+                        }}
                         disabled={isSettingsLoading || isSaving}
                       >
                         <SelectTrigger id="settings-theme">

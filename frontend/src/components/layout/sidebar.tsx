@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom'
-import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -11,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
 import { Avatar, AvatarFallback } from '@/components/ui'
-import { SettingsPanel, SettingsTrigger } from '@/components/settings'
+import { SettingsTrigger } from '@/components/settings'
 import { getInitials } from '@/utils/format'
 import { useI18n } from '@/i18n'
 
@@ -40,12 +39,13 @@ const navItems = [
 
 interface SidebarProps {
   onNavigate?: () => void
+  settingsOpen: boolean
+  onSettingsOpen: () => void
 }
 
-export function Sidebar({ onNavigate }: SidebarProps) {
+export function Sidebar({ onNavigate, settingsOpen, onSettingsOpen }: SidebarProps) {
   const { user, logout } = useAuth()
   const { t } = useI18n()
-  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const handleNavClick = () => {
     onNavigate?.()
@@ -109,7 +109,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <div className="mt-2">
             <SettingsTrigger
               active={settingsOpen}
-              onClick={() => setSettingsOpen(true)}
+              onClick={onSettingsOpen}
             />
           </div>
         </div>
@@ -122,13 +122,6 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <LogOut className="h-3.5 w-3.5" />
           {t('common.logout')}
         </button>
-
-        <SettingsPanel
-          open={settingsOpen}
-          user={user}
-          onOpenChange={setSettingsOpen}
-          onLogout={logout}
-        />
       </div>
     </div>
   )
