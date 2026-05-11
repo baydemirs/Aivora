@@ -22,6 +22,8 @@ const dictionary: Dictionary = {
   'topbar.profileSettings': { en: 'Profile Settings', tr: 'Profil Ayarları' },
   'topbar.signOut': { en: 'Sign out', tr: 'Çıkış Yap' },
   'topbar.language': { en: 'Language', tr: 'Dil' },
+  'topbar.theme': { en: 'Theme', tr: 'Tema' },
+  'topbar.currentTheme': { en: 'Current theme', tr: 'Geçerli tema' },
   'settings.title': { en: 'Settings', tr: 'Ayarlar' },
   'settings.subtitle': { en: 'Manage account, workspace, notifications, and security preferences.', tr: 'Hesap, çalışma alanı, bildirim ve güvenlik tercihlerini yönetin.' },
   'settings.triggerDescription': { en: 'Account and preferences', tr: 'Hesap ve tercihler' },

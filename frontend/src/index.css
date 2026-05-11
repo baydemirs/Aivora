@@ -53,6 +53,33 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
+.dark {
+  --color-background: #10100F;
+  --color-foreground: #F5F5F4;
+  --color-card: #181716;
+  --color-card-foreground: #F5F5F4;
+  --color-popover: #1C1A19;
+  --color-popover-foreground: #F5F5F4;
+  --color-primary: #635BFF;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #242220;
+  --color-secondary-foreground: #F5F5F4;
+  --color-muted: #242220;
+  --color-muted-foreground: #A8A29E;
+  --color-accent: #27243A;
+  --color-accent-foreground: #C7D2FE;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #2E2B29;
+  --color-input: #3C3835;
+  --color-ring: #818CF8;
+  --color-sidebar: #161514;
+  --color-sidebar-foreground: #D6D3D1;
+  --color-sidebar-border: #292524;
+  --color-sidebar-accent: #27243A;
+  --color-sidebar-accent-foreground: #C7D2FE;
+}
+
 /* ─── Global Resets ─── */
 *,
 *::before,
